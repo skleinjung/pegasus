@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# configuration
+CONFIG_PATH=/large-pool/config/snippets
+CONTROL_TEMPLATE_ID=100
+CONTROL_VMID=9999
+
+# update user-data
+curl https://raw.githubusercontent.com/skleinjung/pegasus/master/configurations/control/user-data.yaml -o "${CONFIG_PATH}/control-user-data.yaml"
+
+# recreate VM with new settings
+qm stop "${CONTROL_VMID}"
+qm destroy "${CONTROL_VMID}" --purge
+qm clone "${CONTROL_TEMPLATE_ID}" "${CONTROL_VMID}" --name control
+qm set "${CONTROL_VMID}" --cicustom "user=config:snippets/control-user-data.yaml"
+qm start "${CONTROL_VMID}"
