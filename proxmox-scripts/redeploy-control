@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# configuration
+CONFIG_PATH=/large-pool/config/snippets
+TEMPLATE_ID=103
+VMID=502
+
+# update user-data
+curl -sL https://raw.githubusercontent.com/skleinjung/pegasus/master/configurations/k3s-server/user-data.yaml -o "${CONFIG_PATH}/k3s-server-user-data.yaml"
+
+# recreate VM with new settings
+qm stop "${VMID}"
+qm destroy "${VMID}" --purge
+qm clone "${TEMPLATE_ID}" "${VMID}" --name control
+qm set "${VMID}" --cicustom "user=config:snippets/k3s-server-user-data.yaml"
+qm start "${VMID}"

@@ -2,11 +2,11 @@
 
 # configuration
 CONFIG_PATH=/large-pool/config/snippets
-CONTROL_TEMPLATE_ID=100
+CONTROL_TEMPLATE_ID=103
 CONTROL_VMID=9999
 
 # update user-data
-curl https://raw.githubusercontent.com/skleinjung/pegasus/master/configurations/control/user-data.yaml -o "${CONFIG_PATH}/control-user-data.yaml"
+curl -sL https://raw.githubusercontent.com/skleinjung/pegasus/master/configurations/control/user-data.yaml -o "${CONFIG_PATH}/control-user-data.yaml"
 
 # recreate VM with new settings
 qm stop "${CONTROL_VMID}"
