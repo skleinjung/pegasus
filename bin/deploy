@@ -1,0 +1,8 @@
+#!/bin/bash
+
+CONFIG_ROOT=/large-pool/config/snippets
+
+echo "Copying user data configurations..."
+scp -qr configurations/jump-host/user-data.yaml "typhon:${CONFIG_ROOT}/jump-host-user-data.yaml"
+scp -qr configurations/k3s-control-server/user-data.yaml "typhon:${CONFIG_ROOT}/k3s-control-server-user-data.yaml"
+scp -qr configurations/k3s-server/user-data.yaml "typhon:${CONFIG_ROOT}/k3s-server-data.yaml"

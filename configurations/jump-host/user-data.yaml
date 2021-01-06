@@ -1,5 +1,5 @@
 #cloud-config
-hostname: control
+hostname: jump-host
 chpasswd:
   expire: False
 manage_etc_hosts: true
