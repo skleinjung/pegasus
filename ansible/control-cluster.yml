@@ -45,9 +45,9 @@
   tasks:
   - name: Clone VM template
     community.general.proxmox_kvm:
-      api_user: '{{ proxmox_api_user }}'
-      api_password: '{{ proxmox_api_password }}'
-      api_host: '{{ proxmox_api_host }}'
+      api_user: '{{ proxmox__api_user }}'
+      api_password: '{{ proxmox__api_password }}'
+      api_host: '{{ proxmox__api_host }}'
       clone: ubuntu-server-20210104
       format: unspecified
       full: no
@@ -60,14 +60,14 @@
   # API returns before the VMID can be looked up on the next step, so we delay just a bit
   - name: Wait for new VM to become consisent
     wait_for:
-      timeout: 5
+      timeout: 10
     delegate_to: localhost
 
   - name: Update VM configuration
     community.general.proxmox_kvm:
-      api_user: '{{ proxmox_api_user }}'
-      api_password: '{{ proxmox_api_password }}'
-      api_host: '{{ proxmox_api_host }}'
+      api_user: '{{ proxmox__api_user }}'
+      api_password: '{{ proxmox__api_password }}'
+      api_host: '{{ proxmox__api_host }}'
       balloon: 2048
       cicustom: user=config:snippets/control-server-user-data.yml,meta=config:snippets/control-server-metadata.yml
       memory: 4096
@@ -81,50 +81,29 @@
       timeout: 30
       update: yes
 
-  - name: Start new VM
-    community.general.proxmox_kvm:
-      api_user: '{{ proxmox_api_user }}'
-      api_password: '{{ proxmox_api_password }}'
-      api_host: '{{ proxmox_api_host }}'
-      name: '{{ vm_name }}'
-      node: typhon
-      proxmox_default_behavior: no_defaults
-      state: started
-      timeout: 300
+  - name: Start VMs
+    include_role:
+      name: proxmox.start-vms
+    vars:
+      proxmox__new_vm_group: new_control_hosts
+      proxmox__vm_names:
+      - '{{ vm_name }}'
 
-  - name: Add new VM to inventory
-    add_host:
-      name: '{{ vm_name }}'
-      groups: new_vms
-
-- hosts: new_vms
+- hosts: new_control_hosts
   gather_facts: no
   tasks:
-    - name: Wait for SSH to be ready
-      delegate_to: localhost
-      local_action: wait_for port=22 host="{{ inventory_hostname }}" search_regex=OpenSSH delay=10
+    - name: Updated ssh identity for {{ inventory_hostname }}
+      include_role:
+        name: util.update-ssh-identity
+      vars:
+        util__new_host: '{{ inventory_hostname }}'
+        util__target_host: localhost
+        util__target_user: sean
 
-    - name: Add new SSH host key to localhost
-      become_user: sean
-      delegate_to: localhost
-      shell: ssh-keyscan -H {{ inventory_hostname }} >> ~/.ssh/known_hosts
-
-    - name: Remove any previous known_hosts for this IP address
-      become_user: sean
-      delegate_to: localhost
-      shell: ssh-keygen -R "$(getent hosts {{ inventory_hostname }} | awk '{ print $1 }')" 
-
-    # we delay, because the SSH server is brought up by cloud-init before SSH keys are added...
-    - name: Wait for SSH keys to be authorized
-      wait_for:
-        timeout: 30
-      delegate_to: localhost
-
-    - name: Wait for cloud-init to finish
-      wait_for:
-        path: /var/run/cloud-init/status.json
-        search_regex: '"stage": null'
+    - name: Wait for cloud-init to finish on {{ inventory_hostname }}
+      include_role:
+        name: util.wait-for-cloud-init
     
     - name: Perform initial patching
       include_role:
-        name: patch-os
+        name: apt-update
