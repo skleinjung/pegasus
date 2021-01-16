@@ -1,0 +1,11 @@
+- name: Install cloud-init configurations
+  copy:
+    dest: '{{ cloud_config_root }}'
+    group: proxmox
+    owner: root
+    src: '{{ item }}'
+  with_fileglob:
+  - cloud-config/*
+
+
+    
