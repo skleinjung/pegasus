@@ -9,11 +9,12 @@ all:
       hosts:
         minerva:
 
-    # proxmox_nodes:
-    #   hosts:
-    #     typhon:
-    #       ansible_python_interpreter: /usr/bin/python3
-    #       ansible_user: sean
+    # todo: this overwrites things from dynamic inventory
+    proxmox_nodes:
+      hosts:
+        typhon:
+          ansible_python_interpreter: /usr/bin/python3
+          ansible_user: sean
 
     servers:
       hosts:
