@@ -1,0 +1,5 @@
+arkade_suffix: '{% if arkade_os == "windows" %}.exe{% else %}{% if arkade_arch != "amd64" %}-{{ arkade_arch }}{% endif %}{% endif %}'
+arkade_filename: arkade{{ arkade_suffix }}
+arkade_install_path: '{% if arkade_os == "windows" %}$HOME/bin/{{ arkade_filename }}{% else %}/usr/local/bin/{{ arkade_filename }}{% endif %}'
+arkade_url: '{{ arkade_mirror }}/{{ arkade_version }}/{{ arkade_filename }}'
+arkade_checksum_url: '{{ arkade_url }}.sha256'
