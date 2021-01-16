@@ -1,0 +1,30 @@
+all:
+  children:
+
+    # dynamically-created group of k3s control server nodes
+    control_servers:
+
+    # the host used to execute proxmox API calls from
+    proxmox_controller:
+      hosts:
+        minerva:
+
+    # proxmox_nodes:
+    #   hosts:
+    #     typhon:
+    #       ansible_python_interpreter: /usr/bin/python3
+    #       ansible_user: sean
+
+    servers:
+      hosts:
+        lockbox:
+        pfsense:
+
+    workstations:
+      hosts:
+        minerva:
+          ansible_user: sean
+
+  vars:
+    ansible_become: yes
+    ansible_user: pegasus
