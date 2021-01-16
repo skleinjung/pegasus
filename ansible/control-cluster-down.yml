@@ -1,0 +1,34 @@
+---
+- name: Destroy control-server VMs
+  hosts: minerva
+  tasks:
+  - name: Stop control-server VMs
+    community.general.proxmox_kvm:
+      api_user: '{{ proxmox_api_user }}'
+      api_password: '{{ proxmox_api_password }}'
+      api_host: '{{ proxmox_api_host }}'
+      force: yes
+      name: '{{ item }}'
+      node: typhon
+      proxmox_default_behavior: no_defaults
+      state: stopped
+      timeout: 300
+    with_items:
+    - "{{ groups['control_servers'] }}"
+
+  # VM removal fails silently if it is not shut down, so we wait for VM to settle after stopping first
+  - name: Wait for VMs to shutdown
+    wait_for:
+      timeout: 15
+
+  - name: Remove control-server VMs
+    community.general.proxmox_kvm:
+      api_user: '{{ proxmox_api_user }}'
+      api_password: '{{ proxmox_api_password }}'
+      api_host: '{{ proxmox_api_host }}'
+      name: '{{ item }}'
+      node: typhon
+      proxmox_default_behavior: no_defaults
+      state: absent
+    with_items:
+    - "{{ groups['control_servers'] }}"

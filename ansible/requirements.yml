@@ -1,0 +1,8 @@
+---
+collections:
+  - name: community.general
+    version: 1.3.4
+
+# roles:
+#   - name: some.role
+#     version: x.y.z
