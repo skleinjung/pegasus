@@ -1,9 +1,6 @@
 ---
-- name: Create k3s-control-server VM
+- name: Create control-server VM
   hosts: proxmox_controller
-  # post_tasks:
-  # - name: Reload inventory with new VM
-  #   meta: refresh_inventory
   tasks:
   - name: Create new cloned VM
     include_role:
@@ -13,11 +10,25 @@
       proxmox__clone_type: control-server
       proxmox__inventory_group: new_control_servers
       proxmox__memory: 4096
+      proxmox__template: ubuntu-server-16gb-20210117
     when: not groups['control_servers']
 
-- name: Initialize new control server
+- name: Ensure existing control server is running
+  hosts: control_servers
+  gather_facts: no
+  tasks:
+    - name: Start VM - {{ inventory_hostname }}
+      include_role:
+        name: proxmox.start-vms
+
+- name: Ensure connectivity for new control server
   hosts: "{{ groups['new_control_servers'] | default([]) }}"
   gather_facts: no
+  post_tasks:
+    - name: Add new VMs to inventory
+      add_host:
+        name: '{{ inventory_hostname }}'
+        groups: control_servers
   tasks:
     - name: Start VM - {{ inventory_hostname }}
       include_role:
@@ -35,11 +46,12 @@
       include_role:
         name: util.wait-for-cloud-init
 
-- name: Ensure existing control server is running
+- name: Setup k3os environment
   hosts: control_servers
   gather_facts: no
   tasks:
-    - name: Start VM - {{ inventory_hostname }}
-      include_role:
-        name: proxmox.start-vms
+  - name: Apply control-server role
+    include_role:
+      name: control-server
+
 
