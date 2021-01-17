@@ -4,9 +4,9 @@
   tasks:
   - name: Stop control-server VMs
     community.general.proxmox_kvm:
-      api_user: '{{ proxmox_api_user }}'
-      api_password: '{{ proxmox_api_password }}'
-      api_host: '{{ proxmox_api_host }}'
+      api_user: '{{ proxmox__api_user }}'
+      api_password: '{{ proxmox__api_password }}'
+      api_host: '{{ proxmox__api_host }}'
       force: yes
       name: '{{ item }}'
       node: typhon
@@ -23,9 +23,9 @@
 
   - name: Remove control-server VMs
     community.general.proxmox_kvm:
-      api_user: '{{ proxmox_api_user }}'
-      api_password: '{{ proxmox_api_password }}'
-      api_host: '{{ proxmox_api_host }}'
+      api_user: '{{ proxmox__api_user }}'
+      api_password: '{{ proxmox__api_password }}'
+      api_host: '{{ proxmox__api_host }}'
       name: '{{ item }}'
       node: typhon
       proxmox_default_behavior: no_defaults

@@ -4,6 +4,7 @@
     that: required_var is defined and required_var | length > 0 and required_var != None
     fail_msg: "{{ required_var }} needs to be set for the role to work "
     success_msg: "Required variable {{ required_var }} is defined"
+  delegate_to: "{{ groups['proxmox_controller'][0] }}"
   loop_control:
     loop_var: required_var
   with_items:
@@ -12,26 +13,19 @@
     - proxmox__api_user
     - proxmox__new_vm_group
     - proxmox__node
-  
+
 - name: Start VMs
+  delegate_to: "{{ groups['proxmox_controller'][0] }}"
   community.general.proxmox_kvm:
     api_user: '{{ proxmox__api_user }}'
     api_password: '{{ proxmox__api_password }}'
     api_host: '{{ proxmox__api_host }}'
-    name: '{{ item }}'
+    name: '{{ inventory_hostname }}'
     node: '{{ proxmox__node }}'
     proxmox_default_behavior: no_defaults
     state: started
     timeout: '{{ proxmox__timeout }}'
-  with_items: '{{ proxmox__vm_names }}'
-
-- name: Add new VMs to inventory
-  add_host:
-    name: '{{ item }}'
-    groups: '{{ proxmox__new_vm_group }}'
-  with_items: '{{ proxmox__vm_names }}'
 
 - name: Wait for SSH to be ready
   delegate_to: localhost
-  local_action: wait_for port=22 host="{{ item }}" search_regex=OpenSSH delay=10 
-  with_items: '{{ proxmox__vm_names }}'
+  local_action: wait_for port=22 host="{{ inventory_hostname }}" search_regex=OpenSSH sleep=3
