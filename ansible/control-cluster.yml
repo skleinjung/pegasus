@@ -1,98 +1,28 @@
 ---
-- hosts: localhost
-  tasks:
-  - name: Create instance id
-    set_fact:
-      instance_id: "{{ lookup( 'password', '/dev/null length=32' ) | to_uuid | lower }}"
-    delegate_to: localhost
-    delegate_facts: true
-
-  - name: Create random suffix for hostname
-    set_fact:
-      random_suffix: "{{ instance_id[:3] }}"
-    delegate_to: localhost
-    delegate_facts: true
-
-- name: Set VM parameters as facts for all hosts
-  hosts:
-  - localhost
-  - proxmox_controller
-  - typhon
-  tasks:
-  - name: Set metadata facts
-    set_fact:
-      instance_id: "{{ hostvars['localhost'].instance_id }}"
-      vm_name: control-server-{{ hostvars['localhost'].random_suffix }}
-    
-- name: Create updated cloud-init metadata
-  hosts: typhon
-  roles:
-  - proxmox.install-cloud-init-configurations
-  tasks:
-  - name: Write cloud-init metadata
-    copy:
-      content: |
-        instance-id: {{ instance_id }}
-        instance_id: {{ instance_id }}
-        local-hostname: {{ vm_name }}
-        local_hostname: {{ vm_name }}
-        vm_name: {{ vm_name }}
-      dest: /large-pool/config/snippets/control-server-metadata.yml
-      mode: u=rw,g=r,o=r
-        
 - name: Create k3s-control-server VM
   hosts: proxmox_controller
   tasks:
-  - name: Clone VM template
-    community.general.proxmox_kvm:
-      api_user: '{{ proxmox__api_user }}'
-      api_password: '{{ proxmox__api_password }}'
-      api_host: '{{ proxmox__api_host }}'
-      clone: ubuntu-server-20210104
-      format: unspecified
-      full: no
-      name: '{{ vm_name }}'
-      node: typhon
-      proxmox_default_behavior: no_defaults
-      state: present
-      timeout: 30
+  - name: Create new cloned VM
+    include_role:
+      name: proxmox.clone-vm
+    vars:
+      proxmox__balloon: 2048
+      proxmox__clone_type: control-server
+      proxmox__inventory_group: new_control_hosts
+      proxmox__memory: 4096
 
-  # API returns before the VMID can be looked up on the next step, so we delay just a bit
-  - name: Wait for new VM to become consisent
-    wait_for:
-      timeout: 10
-    delegate_to: localhost
-
-  - name: Update VM configuration
-    community.general.proxmox_kvm:
-      api_user: '{{ proxmox__api_user }}'
-      api_password: '{{ proxmox__api_password }}'
-      api_host: '{{ proxmox__api_host }}'
-      balloon: 2048
-      cicustom: user=config:snippets/control-server-user-data.yml,meta=config:snippets/control-server-metadata.yml
-      memory: 4096
-      name: '{{ vm_name }}'
-      node: typhon
-      proxmox_default_behavior: no_defaults
-      # TODO: need to create template with desired size...
-      scsi:
-        scsi0: 'size=+12G'
-      state: present
-      timeout: 30
-      update: yes
-
-  - name: Start VMs
+  - name: Start new VM
     include_role:
       name: proxmox.start-vms
     vars:
       proxmox__new_vm_group: new_control_hosts
       proxmox__vm_names:
-      - '{{ vm_name }}'
+      - '{{ proxmox__clone_name }}'
 
 - hosts: new_control_hosts
   gather_facts: no
   tasks:
-    - name: Updated ssh identity for {{ inventory_hostname }}
+    - name: Update ssh identity for {{ inventory_hostname }}
       include_role:
         name: util.update-ssh-identity
       vars:

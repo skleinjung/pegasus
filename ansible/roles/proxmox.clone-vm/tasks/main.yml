@@ -1,0 +1,81 @@
+---
+- name: Verify that required string variables are defined
+  assert:
+    that: required_var is defined and required_var | length > 0 and required_var != None
+    fail_msg: "{{ required_var }} needs to be set for the role to work "
+    success_msg: "Required variable {{ required_var }} is defined"
+  loop_control:
+    loop_var: required_var
+  with_items:
+    - proxmox__api_host
+    - proxmox__api_password
+    - proxmox__api_user
+    - proxmox__clone_type
+    - proxmox__inventory_group
+    - proxmox__node
+    - proxmox__node_config_root
+    - proxmox__template
+
+- name: Create instance id
+  set_fact:
+    proxmox__clone_instance_id: "{{ lookup( 'password', '/dev/null length=32' ) | to_uuid | lower }}"
+
+- name: Create VM name
+  set_fact:
+    proxmox__clone_name: '{{ proxmox__clone_type }}-{{ proxmox__clone_instance_id[:3] }}'
+
+- name: Create VM name
+  set_fact:
+    proxmox__clone_instance_id: '{{ proxmox__clone_instance_id }}'
+    proxmox__clone_name: '{{ proxmox__clone_name }}'
+  delegate_facts: true
+  delegate_to: '{{ proxmox__node }}'
+
+- name: Write cloud-init metadata
+  copy:
+    content: |
+      instance-id: {{ proxmox__clone_instance_id }}
+      instance_id: {{ proxmox__clone_instance_id }}
+      local-hostname: {{ proxmox__clone_name }}
+      local_hostname: {{ proxmox__clone_name }}
+      vm_name: {{ proxmox__clone_name }}
+    dest: '{{ proxmox__node_config_root }}/{{ proxmox__clone_name }}-metadata.yml'
+    mode: u=rw,g=r,o=r
+  delegate_to: '{{ proxmox__node }}'
+
+- name: Clone VM template
+  community.general.proxmox_kvm:
+    api_user: '{{ proxmox__api_user }}'
+    api_password: '{{ proxmox__api_password }}'
+    api_host: '{{ proxmox__api_host }}'
+    clone: '{{ proxmox__template }}'
+    format: unspecified
+    full: no
+    name: '{{ proxmox__clone_name }}'
+    node: '{{ proxmox__node }}'
+    proxmox_default_behavior: no_defaults
+    state: present
+    timeout: '{{ proxmox__timeout }}'
+
+# API returns before the VMID can be looked up on the next step, so we delay just a bit
+- name: Wait for new VM clone to be created
+  wait_for:
+    timeout: 10
+
+- name: Configure clone
+  community.general.proxmox_kvm:
+    api_user: '{{ proxmox__api_user }}'
+    api_password: '{{ proxmox__api_password }}'
+    api_host: '{{ proxmox__api_host }}'
+    balloon: '{{ proxmox__balloon | default(omit) }}'
+    cicustom: user=config:snippets/{{ proxmox__clone_type }}-user-data.yml,meta=config:snippets/{{ proxmox__clone_name }}-metadata.yml
+    memory: '{{ proxmox__memory | default(omit) }}'
+    name: '{{ proxmox__clone_name }}'
+    node: '{{ proxmox__node }}'
+    proxmox_default_behavior: no_defaults
+    # TODO: need to create template with desired size...
+    scsi:
+      scsi0: 'size=+12G'
+    state: present
+    timeout: '{{ proxmox__timeout }}'
+    update: yes

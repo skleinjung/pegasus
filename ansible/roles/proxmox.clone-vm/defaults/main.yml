@@ -1,0 +1,17 @@
+# proxmox__inventory_group: inventory group for the new VM
+proxmox__inventory_group: new_vms
+
+# proxmox__clone_type: type for the new VM, which will build the name and user-data scripts
+proxmox__clone_type: clone
+
+# proxmox__node: proxmox node to create the VM on
+proxmox__node: typhon
+
+# proxmox__node_config_root: local path on proxmox host where cloud-config files should be placed
+proxmox__node_config_root: /large-pool/config/snippets
+
+# proxmox__template: template to use when clone new VMs (defaults to latest ubuntu server)
+proxmox__template: ubuntu-server-20210104
+
+# proxmox__timeout: number of seconds to wait for proxmox commands before failing
+proxmox__timeout: 300
