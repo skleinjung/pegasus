@@ -11,7 +11,7 @@ proxmox__node: typhon
 proxmox__node_config_root: /large-pool/config/snippets
 
 # proxmox__template: template to use when clone new VMs (defaults to latest ubuntu server)
-proxmox__template: ubuntu-server-20210104
+proxmox__template: ubuntu-server-20210117
 
 # proxmox__timeout: number of seconds to wait for proxmox commands before failing
 proxmox__timeout: 300
