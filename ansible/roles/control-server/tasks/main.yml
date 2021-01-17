@@ -1,0 +1,41 @@
+---
+- name: Install arkade
+  include_role:
+    name: install.arkade
+
+- name: Install k3sup
+  ansible.builtin.shell: |
+    arkade get k3sup
+    mv ~/.arkade/bin/k3sup /usr/local/bin/k3sup
+    chmod a+rx /usr/local/bin/k3sup
+    rm -rf ~/.arkade
+  args:
+    creates: /usr/local/bin/k3sup
+  become: true
+
+- name: Create kube config directory
+  ansible.builtin.file:
+    group: pegasus
+    owner: pegasus
+    path: /home/pegasus/.kube
+    state: directory
+
+- name: Install k3s cluster
+  ansible.builtin.shell: |
+    k3sup install \
+      --k3s-extra-args '--disable servicelb --with-node-id' \
+      --local \
+      --local-path /home/pegasus/.kube/config
+    echo "export KUBECONFIG=/home/pegasus/.kube/config" >> /home/pegasus/.bashrc
+  args:
+    creates: /home/pegasus/.kube/config
+  become: true
+
+- name: Give ownership of kube config
+  ansible.builtin.file:
+    path: /home/pegasus/.kube/config
+    group: pegasus
+    owner: pegasus
+
+- name: Verify cluster connectivity
+  ansible.builtin.shell: kubectl get nodes
