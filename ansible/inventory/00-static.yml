@@ -1,22 +1,16 @@
 all:
   children:
+    control_server:     # dynamically-created group of control-server nodes
+    k3s_dev:            # dynamically-created group of k3s dev server nodes
 
-    # dynamically-created group of k3s dev server nodes
-    k3s_dev:
-
-    # the host used to execute proxmox API calls from
-    proxmox_controller:
+    proxmox_controller: # the host used to execute proxmox API calls from
       hosts:
         minerva:
-
-    # todo: this overwrites things from dynamic inventory
-    proxmox_nodes:
-      hosts:
-        typhon:
-          ansible_python_interpreter: /usr/bin/python3
-          ansible_user: sean
-
+   
     servers:
+      children:
+        control_server:
+        k3s_dev:
       hosts:
         lockbox:
         pfsense:
@@ -24,8 +18,4 @@ all:
     workstations:
       hosts:
         minerva:
-          ansible_user: sean
 
-  vars:
-    ansible_become: yes
-    ansible_user: pegasus
