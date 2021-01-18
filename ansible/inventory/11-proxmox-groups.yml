@@ -2,4 +2,4 @@ plugin: constructed
 strict: False
 
 groups:
-    control_servers: inventory_hostname.startswith('control-server-')
+    k3s_dev: inventory_hostname.startswith('k3s-dev-')

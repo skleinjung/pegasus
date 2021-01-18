@@ -1,0 +1,7 @@
+---
+- name: Create k3s-dev-server VM
+  hosts: proxmox_nodes
+  tasks:
+  - name: Copy base cloud-init user data files
+    include_role:
+      name: proxmox.install-cloud-init-configurations

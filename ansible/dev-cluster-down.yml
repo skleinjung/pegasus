@@ -1,8 +1,8 @@
 ---
-- name: Destroy control-server VMs
+- name: Destroy k3s-dev-server VMs
   hosts: minerva
   tasks:
-  - name: Stop control-server VMs
+  - name: Stop k3s-dev-server VMs
     community.general.proxmox_kvm:
       api_user: '{{ proxmox__api_user }}'
       api_password: '{{ proxmox__api_password }}'
@@ -14,14 +14,14 @@
       state: stopped
       timeout: 300
     with_items:
-    - "{{ groups['control_servers'] }}"
+    - "{{ groups['k3s_dev'] }}"
 
   # VM removal fails silently if it is not shut down, so we wait for VM to settle after stopping first
   - name: Wait for VMs to shutdown
     wait_for:
       timeout: 15
 
-  - name: Remove control-server VMs
+  - name: Remove k3s-dev VMs
     community.general.proxmox_kvm:
       api_user: '{{ proxmox__api_user }}'
       api_password: '{{ proxmox__api_password }}'
@@ -31,4 +31,4 @@
       proxmox_default_behavior: no_defaults
       state: absent
     with_items:
-    - "{{ groups['control_servers'] }}"
+    - "{{ groups['k3s_dev'] }}"

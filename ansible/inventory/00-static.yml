@@ -1,8 +1,8 @@
 all:
   children:
 
-    # dynamically-created group of k3s control server nodes
-    control_servers:
+    # dynamically-created group of k3s dev server nodes
+    k3s_dev:
 
     # the host used to execute proxmox API calls from
     proxmox_controller:
