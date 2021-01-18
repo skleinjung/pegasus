@@ -1,4 +1,4 @@
-- name: Ensure the arkae checksum is downloaded
+- name: Ensure the arkade checksum is downloaded
   uri:
     url: "{{ arkade_checksum_url }}"
     return_content: true

@@ -37,5 +37,14 @@
     group: pegasus
     owner: pegasus
 
-- name: Verify cluster connectivity
-  ansible.builtin.shell: kubectl get nodes
+- name: Wait for nodes to be ready
+  delay: 2
+  register: nodes
+  retries: 30
+  shell: "kubectl get nodes"
+  until:      
+    - '" Ready "  in nodes.stdout'
+
+- name: Install argocd
+  include_role:
+    name: install.argocd

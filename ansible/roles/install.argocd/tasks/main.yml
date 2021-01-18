@@ -1,0 +1,7 @@
+- name: Install argocd
+  ansible.builtin.shell: |
+    arkade install argocd && \
+    mkdir -p /etc/ansible-locks && \
+    touch /etc/ansible-locks/argocd
+  args:
+    creates: "/etc/ansible-locks/argocd"
