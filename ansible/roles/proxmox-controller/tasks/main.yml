@@ -1,0 +1,15 @@
+- name: Install pip
+  apt:
+    name: python3-pip
+    state: latest
+    install_recommends: no
+
+- name: Install required Python packages
+  pip:
+    name: 
+      - pan-os-python
+      - proxmoxer
+      - requests
+
+
+    
