@@ -1,4 +1,27 @@
 ---
+- name: Verify that required string variables are defined
+  assert:
+    that: required_var is defined and required_var | length > 0 and required_var != None
+    fail_msg: "{{ required_var }} needs to be set for the role to work "
+    success_msg: "Required variable {{ required_var }} is defined"
+  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  loop_control:
+    loop_var: required_var
+  with_items:
+    - k3s_server__ip_end
+    - k3s_server__ip_start
+
+- name: Install pip
+  apt:
+    name: python3-pip
+    state: latest
+    install_recommends: no
+
+- name: Install OpenShift module for Python
+  pip:
+    name: openshift
+    state: latest
+
 - name: Install arkade
   include_role:
     name: install.arkade
@@ -15,27 +38,41 @@
 
 - name: Create kube config directory
   ansible.builtin.file:
-    group: pegasus
-    owner: pegasus
-    path: /home/pegasus/.kube
+    path: ~/.kube
     state: directory
 
 - name: Install k3s cluster
   ansible.builtin.shell: |
     k3sup install \
+      --host "$(hostame)" \
+      --ip "127.0.0.1" \
       --k3s-extra-args '--disable servicelb --with-node-id' \
       --local \
-      --local-path /home/pegasus/.kube/config
-    echo "export KUBECONFIG=/home/pegasus/.kube/config" >> /home/pegasus/.bashrc
+      --local-path ~/.kube/config
+    echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
   args:
-    creates: /home/pegasus/.kube/config
+    creates: ~/.kube/config
   become: true
 
-- name: Give ownership of kube config
-  ansible.builtin.file:
-    path: /home/pegasus/.kube/config
-    group: pegasus
-    owner: pegasus
+- name: 'Setup kubectl for users: {{ k3s_server__kubectl_users }}'
+  block:
+    - name: Copy kube config
+      ansible.builtin.copy:
+        dest: /home/{{ item }}/.kube/
+        group: '{{ item }}'
+        owner: '{{ item }}'
+        remote_src: yes
+        src: ~/.kube/config
+      with_items: '{{ k3s_server__kubectl_users }}'
+
+    - name: Set KUBECONFIG environment variable
+      ansible.builtin.lineinfile:
+        dest: /home/{{ item }}/.bashrc
+        group: '{{ item }}'
+        line: "export KUBECONFIG=~/.kube/config"
+        owner: '{{ item }}'
+        state: present
+      with_items: '{{ k3s_server__kubectl_users }}'
 
 - name: Wait for nodes to be ready
   delay: 2
@@ -44,6 +81,13 @@
   shell: "kubectl get nodes"
   until:      
     - '" Ready "  in nodes.stdout'
+
+- name: Install metallb
+  include_role:
+    name: install.metallb
+  vars:
+    metallb__ip_end: '{{ k3s_server__ip_end }}'
+    metallb__ip_start: '{{ k3s_server__ip_start }}'
 
 - name: Install argocd
   include_role:

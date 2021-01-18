@@ -53,5 +53,10 @@
   - name: Apply k3s-server role
     include_role:
       name: k3s-server
+    vars:
+      k3s_server__ip_end: 10.0.1.199
+      k3s_server__ip_start: 10.0.1.100
+      k3s_server__kubectl_users:
+      - sean
 
 

@@ -1,0 +1,1 @@
+metallb__manifest: https://raw.githubusercontent.com/metallb/metallb/v{{ metallb__version }}/manifests/metallb.yaml

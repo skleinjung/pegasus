@@ -1,0 +1,8 @@
+# k3s_server__ip_start: first IP address in the range assigned to this cluster [Required]
+# k3s_server__ip_start: e.g., 10.0.1.100
+
+# k3s_server__ip_end: last IP address in the range assigned to this cluster [Required]
+# k3s_server__ip_end: e.g., 10.0.1.199
+
+# k3s_server__kubectl_users: names of users who will have kubectl configured on the new server
+k3s_server__kubectl_users: []

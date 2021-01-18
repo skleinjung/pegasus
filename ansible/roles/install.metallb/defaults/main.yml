@@ -1,0 +1,8 @@
+# metallb__version: version of metallb to install
+metallb__version: 0.9.5
+
+# metallb__ip_start: first IP address in the range managed by metallb [Required]
+# metallb__ip_start: e.g., 10.0.1.100
+
+# metallb__ip_end: last IP address in the range managed by metallb [Required]
+# metallb__ip_end: e.g., 10.0.1.199

@@ -1,0 +1,72 @@
+---
+- name: Verify that required string variables are defined
+  assert:
+    that: required_var is defined and required_var | length > 0 and required_var != None
+    fail_msg: "{{ required_var }} needs to be set for the role to work "
+    success_msg: "Required variable {{ required_var }} is defined"
+  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  loop_control:
+    loop_var: required_var
+  with_items:
+    - metallb__ip_end
+    - metallb__ip_start
+    - metallb__manifest
+    
+- name: Create the metallb Namespace
+  community.kubernetes.k8s:
+    definition:
+      api_version: v1
+      kind: Namespace
+      metadata:
+        name: metallb-system
+    state: present
+
+- name: Get the metallb Secret, if it already exists
+  community.kubernetes.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: memberlist
+    namespace: metallb-system
+  register: metallb_secret
+
+- name: Create the metallb Secret
+  community.kubernetes.k8s:
+    definition:
+      api_version: v1
+      kind: Secret
+      metadata:
+        name: memberlist
+        namespace: metallb-system
+      data:
+        secretkey: "{{ lookup( 'password', '/dev/null length=128' ) | b64encode }}"
+    state: present
+  when: (metallb_secret.resources | count) == 0
+
+- name: Create the metallb ConfigMap
+  community.kubernetes.k8s:
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        namespace: metallb-system
+        name: config
+      data:           
+        config: |
+          address-pools:
+            - name: default
+              protocol: layer2
+              addresses:
+              - {{ metallb__ip_start }}-{{ metallb__ip_end }}
+    state: present
+
+- name: Get a list of all Deployments in the metallb namespace
+  community.kubernetes.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: metallb-system
+  register: metallb_deployments
+
+- name: Install metallb
+  ansible.builtin.shell: |
+    kubectl apply -f {{ metallb__manifest | quote }}
+  when: (metallb_deployments.resources | count) == 0
