@@ -52,7 +52,7 @@
     k3sup install \
       --host "$(hostame)" \
       --ip "127.0.0.1" \
-      --k3s-extra-args '--disable servicelb --with-node-id' \
+      --k3s-extra-args '--disable servicelb --disable traefik --with-node-id' \
       --local \
       --local-path ~/.kube/config
     echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
@@ -105,6 +105,15 @@
     touch /etc/ansible-locks/nfs-client-provisioner
   args:
     creates: "/etc/ansible-locks/nfs-client-provisioner"
+
+- name: Install traefik2 ingress controller
+  ansible.builtin.shell: |
+    arkade install traefik2 \
+      --dashboard
+    mkdir -p /etc/ansible-locks && \
+    touch /etc/ansible-locks/traefik2
+  args:
+    creates: "/etc/ansible-locks/traefik2"
 
 - name: Install argocd
   include_role:

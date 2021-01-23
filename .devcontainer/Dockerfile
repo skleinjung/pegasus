@@ -23,14 +23,22 @@ RUN userdel vscode \
 #     google-cloud-sdk-pubsub-emulator && \
 #   rm -rf /var/lib/apt/lists/*
 
-# install terraform
-RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add - && \
-  apt-get update && \
-  apt-get install -y software-properties-common && \
-  apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && \
-  apt-get update && \
-  apt-get install -y terraform && \
-  rm -rf /var/lib/apt/lists/*
+# install arkade and useful tools
+RUN curl -sLS https://dl.get-arkade.dev | sh \
+  && arkade get kustomize \
+  && arkade get terraform \
+  && arkade get yq \
+  && chmod +x /root/.arkade/bin/* \
+  && mv /root/.arkade/bin/* /usr/local/bin/
+  
+# install latest terraform (newer than arkade's)
+# RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add - && \
+#   apt-get update && \
+#   apt-get install -y software-properties-common && \
+#   apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && \
+#   apt-get update && \
+#   apt-get install -y terraform && \
+#   rm -rf /var/lib/apt/lists/*
 
 RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/home/$USERNAME/scratch/.bash_history" \
     && echo $SNIPPET >> "/home/$USERNAME/.bashrc" \
