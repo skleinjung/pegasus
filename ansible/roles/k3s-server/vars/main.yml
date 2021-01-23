@@ -6,3 +6,9 @@
 
 # k3s_server__kubectl_users: names of users who will have kubectl configured on the new server
 k3s_server__kubectl_users: []
+
+# k3s_server__nfs_server: hostname for the NFS server to use for NFS PVCs [Default: lockbox.pegasus]
+k3s_server__nfs_server: lockbox.pegasus
+
+# k3s_server__nfs_path: export path for the NFS filesystem to store PVCs on [Required]
+# k3s_server__nfs_path: e.g., /exports/k3s-development

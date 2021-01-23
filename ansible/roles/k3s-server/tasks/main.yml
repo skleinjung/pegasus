@@ -17,6 +17,12 @@
     state: latest
     install_recommends: no
 
+- name: Install NFS client
+  apt:
+    name: nfs-common
+    state: latest
+    install_recommends: no
+
 - name: Install OpenShift module for Python
   pip:
     name: openshift
@@ -88,6 +94,17 @@
   vars:
     metallb__ip_end: '{{ k3s_server__ip_end }}'
     metallb__ip_start: '{{ k3s_server__ip_start }}'
+
+- name: Install nfs-client-provisioner
+  ansible.builtin.shell: |
+    arkade install nfs-client-provisioner \
+      --nfs-server {{ k3s_server__nfs_server }} \
+      --nfs-path {{ k3s_server__nfs_path}} && \
+      --set storageClass.name=nfs
+    mkdir -p /etc/ansible-locks && \
+    touch /etc/ansible-locks/nfs-client-provisioner
+  args:
+    creates: "/etc/ansible-locks/nfs-client-provisioner"
 
 - name: Install argocd
   include_role:
