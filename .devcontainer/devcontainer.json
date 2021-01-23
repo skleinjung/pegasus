@@ -1,0 +1,43 @@
+{
+	"build": { 
+		"dockerfile": "Dockerfile" 
+	},
+	
+	"name": "Pegasus Ops",
+
+	"mounts": [ 
+		"source=/home/sean/sandbox/remote.scratch,target=/home/sean/scratch,type=bind",
+		"source=/home/sean/.ssh,target=/home/sean/.ssh,type=bind"
+	],
+
+	"containerEnv": {
+		"DOCKER_HOST": "/var/run/docker.sock",
+		"DOCKER_TLS_VERIFY": "false"
+	},
+	
+	"workspaceFolder": "/workspace",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": { 
+		"terminal.integrated.shell.linux": "/bin/bash"
+	},
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"arcanis.vscode-zipfs",
+		"dbaeumer.vscode-eslint",
+		"hashicorp.terraform"
+		// "ms-vscode.vscode-typescript-tslint-plugin"
+	],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [ 3000 ],
+
+	// run yarn install, and try to connect to emulator -- but don't fail container creation if we can't
+	// "postCreateCommand": "yarn install",
+
+	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "sean",
+	"containerUser": "sean",
+}

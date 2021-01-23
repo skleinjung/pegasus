@@ -1,0 +1,5 @@
+ansible
+pan-os-python
+paramiko
+proxmoxer
+requests
