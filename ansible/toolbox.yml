@@ -36,20 +36,6 @@
             qm set "{{ new_vm_id }}" -balloon "{{ min_memory }}"
             qm set "{{ new_vm_id }}" --cicustom "user=config:snippets/toolbox-user-data.yml,meta=config:snippets/toolbox-metadata.yml"
             qm start "{{ new_vm_id }}"
-
-        - name: Wait for toolbox SSH to be ready
-          include_role:
-            name: ssh.wait-for
-          vars:
-            ssh__hostname: toolbox
-
-        - name: Authorize new toolbox host's SSH keys
-          include_role:
-            name: ssh.update-known-host
-          vars:
-            ssh__host_with_new_key: toolbox
-
-      # TODO: error handling, destroy on error
       vars:
         # maximum amount of memory to allow the toolbox to consume
         max_memory: 4096
@@ -59,6 +45,7 @@
         template_id: 105
         # ID for the new toolbox VM (Required if creating, ignored otherwise)
         new_vm_id: null
+      # TODO: error handling, destroy on error
       when: not groups['toolbox_group'] and not destroy
 
     - name: Destroy toolbox VMs
@@ -85,17 +72,29 @@
       when: not (item in groups['proxmox_all_running'])
       with_items:
         - "{{ groups['toolbox_group'] }}"
-
-    - name: Wait for toolbox SSH to be ready
-      include_role:
-        name: ssh.wait-for
-      vars:
-        ssh__hostname: '{{ item }}'
-      with_items:
-        - "{{ groups['toolbox_group'] }}"
   vars:
     # proxmox node to create the VM on (Default: the first proxmox node in the inventory)
     proxmox_node: proxmox_nodes[0]
+
+- name: Wait for toolbox VMs to be ready
+  gather_facts: no
+  hosts: toolbox_group
+  tasks:
+    - name: Wait for SSH to respond on {{ inventory_hostname }}
+      include_role:
+        name: ssh.wait-for
+      vars:
+        ssh__hostname: toolbox
+
+    - name: Authorize new SSH keys for {{ inventory_hostname }}
+      include_role:
+        name: ssh.update-known-host
+      vars:
+        ssh__host_with_new_key: toolbox
+
+    - name: Wait for cloud-init to finish on {{ inventory_hostname }}
+      include_role:
+        name: cloud-init.wait-for
 
 # - name: Create toolbox VM
 #   hosts: proxmox_nodes

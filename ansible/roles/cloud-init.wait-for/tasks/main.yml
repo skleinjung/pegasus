@@ -1,0 +1,10 @@
+---    
+# we delay, because the SSH server is brought up by cloud-init before SSH keys are added...
+- name: Wait for SSH keys to be authorized
+  ansible.builtin.wait_for_connection:
+    timeout: '{{ cloud_init__ssh_timeout }}'
+
+- name: Wait for cloud-init to finish
+  ansible.builtin.shell: |
+    set -e
+    cloud-init status --wait  > /dev/null 2>&1

@@ -1,0 +1,7 @@
+# cloud_init__ssh_client_host: client host to use when testing SSH, which must have keys to the target host
+# TODO: this is a hack.. what user? why can't we just retry the actual cloud-init wait?
+cloud_init__ssh_client_host: localhost
+
+# cloud_init__ssh_timeout: the amount of time to wait for SSH to be accessible before giving up
+cloud_init__ssh_timeout: 30
+
