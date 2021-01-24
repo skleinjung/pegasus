@@ -1,0 +1,102 @@
+# Usage:
+# 
+# Create VM: `ansible-playbook ... toolbox.yml -e new_vm_id=###`
+#   Variables:
+#     - max_memory: 4096
+#     - min_memory: 2048
+#     - proxmox_node: proxmox_nodes[0]
+#     - template_id: 105
+#
+# Destroy VM: `ansible-playbook ... toolbox.yml -e destroy=true`
+# Update VM: `ansible-playbook ... toolbox.yml`
+
+---
+- name: Update cloud-init user data files
+  hosts: '{{ proxmox_node }}'
+  tasks:
+    - name: Create toolbox VM
+      block:
+        - name: Install cloud-init scripts
+          include_role:
+            name: proxmox.install-cloud-init-configurations
+          vars:
+            proxmox__base_vm_name: toolbox
+            proxmox__use_id_suffix: false
+
+        # since toolbox IS the node we use to access the Proxmox REST API, deploy this VM using the qm cli directly
+        - name: Create toolbox VM
+          ansible.builtin.shell: |
+            set -e
+            qm clone "{{ template_id }}" "{{ new_vm_id }}" --name toolbox
+            qm resize "{{ new_vm_id }}" scsi0 +12G
+            qm set "{{ new_vm_id }}" -memory "{{ max_memory }}"
+            qm set "{{ new_vm_id }}" -balloon "{{ min_memory }}"
+            qm set "{{ new_vm_id }}" --cicustom "user=config:snippets/toolbox-user-data.yml,meta=config:snippets/toolbox-metadata.yml"
+            qm start "{{ new_vm_id }}"
+      # TODO: error handling, destroy on error
+      vars:
+        # maximum amount of memory to allow the toolbox to consume
+        max_memory: 4096
+        # minimum amount of memory to allocate to the toolbox
+        min_memory: 2048
+        # ID for the VM to use as a template
+        template_id: 105
+        # ID for the new toolbox VM (Required if creating, ignored otherwise)
+        new_vm_id: null
+      when: not groups['toolbox_group'] and not destroy
+
+    - name: Destroy toolbox VM
+      ansible.builtin.shell: |
+        set -e
+        qm stop "{{ hostvars['toolbox']['proxmox_vmid'] }}"
+        qm destroy "{{ hostvars['toolbox']['proxmox_vmid'] }}" --purge
+      when: destroy and hostvars['toolbox']
+  vars:
+    # set to true to destroy the toolbox instead of creating it
+    destroy: false
+    # proxmox node to create the VM on (Default: the first node in the inventory)
+    proxmox_node: proxmox_nodes[0]
+    
+
+# - name: Create toolbox VM
+#   hosts: proxmox_nodes
+#   tasks:
+#     - name: Create cloud-init metadata
+#       block:
+#         - name: Install cloud-init user data scripts
+#           include_role:
+#             name: proxmox.install-cloud-init-configurations
+#         - name: Install toolbox metadata
+#           include_role:
+#             name: proxmox.install-vm-metadata
+#             vars:
+#               proxmox__base_vm_name: toolbox
+#               proxmox__use_id_suffix: false
+#       when: false
+
+
+# - name: Create toolbox VM
+#   block:
+#     - name: Update cloud-init configurations
+#       hosts: proxmox_nodes
+#       tasks:
+#       - name: Copy base cloud-init user data files
+#         include_role:
+#           name: proxmox.install-cloud-init-configurations
+
+#     - name: Create instance id
+#       delegate_to: proxmox_nodes
+#       set_fact:
+#         proxmox__clone_instance_id: "{{ lookup( 'password', '/dev/null length=32' ) | to_uuid | lower }}"
+
+#     - name: Write cloud-init metadata
+#       copy:
+#         content: |
+#           instance-id: {{ proxmox__clone_instance_id }}
+#           instance_id: {{ proxmox__clone_instance_id }}
+#           local-hostname: toolbox
+#           local_hostname: toolbox
+#           vm_name: toolbox
+#         dest: '{{ proxmox__node_config_root }}/toolbox-metadata.yml'
+#         mode: u=rw,g=r,o=r
+#       delegate_to: '{{ proxmox__node }}'

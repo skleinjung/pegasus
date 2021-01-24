@@ -3,3 +3,4 @@ strict: False
 
 groups:
     k3s_dev: inventory_hostname.startswith('k3s-dev-')
+    toolbox_group: inventory_hostname == 'toolbox'
