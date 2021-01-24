@@ -11,8 +11,11 @@
 # Update VM: `ansible-playbook ... toolbox.yml`
 
 ---
-- name: Update cloud-init user data files
+- name: '{{ destroy | ternary("Destroy", "Create") }} toolbox VM'
   hosts: '{{ proxmox_node }}'
+  post_tasks:
+    - name: Update dynamic inventory
+      meta: refresh_inventory
   tasks:
     - name: Create toolbox VM
       block:
@@ -33,6 +36,19 @@
             qm set "{{ new_vm_id }}" -balloon "{{ min_memory }}"
             qm set "{{ new_vm_id }}" --cicustom "user=config:snippets/toolbox-user-data.yml,meta=config:snippets/toolbox-metadata.yml"
             qm start "{{ new_vm_id }}"
+
+        - name: Wait for toolbox SSH to be ready
+          include_role:
+            name: ssh.wait-for
+          vars:
+            ssh__hostname: toolbox
+
+        - name: Authorize new toolbox host's SSH keys
+          include_role:
+            name: ssh.update-known-host
+          vars:
+            ssh__host_with_new_key: toolbox
+
       # TODO: error handling, destroy on error
       vars:
         # maximum amount of memory to allow the toolbox to consume
@@ -45,18 +61,41 @@
         new_vm_id: null
       when: not groups['toolbox_group'] and not destroy
 
-    - name: Destroy toolbox VM
+    - name: Destroy toolbox VMs
       ansible.builtin.shell: |
         set -e
-        qm stop "{{ hostvars['toolbox']['proxmox_vmid'] }}"
-        qm destroy "{{ hostvars['toolbox']['proxmox_vmid'] }}" --purge
-      when: destroy and hostvars['toolbox']
+        qm stop "{{ hostvars[item]['proxmox_vmid'] }}"
+        qm destroy "{{ hostvars[item]['proxmox_vmid'] }}" --purge
+      when: destroy
+      with_items:
+        - "{{ groups['toolbox_group'] }}"
   vars:
     # set to true to destroy the toolbox instead of creating it
     destroy: false
     # proxmox node to create the VM on (Default: the first node in the inventory)
     proxmox_node: proxmox_nodes[0]
-    
+
+- name: Start all non-running VMs in toolbox_group
+  hosts: '{{ proxmox_node }}'
+  tasks:
+    - name: Start toolbox VMs
+      ansible.builtin.shell: |
+        set -e
+        qm start "{{ hostvars[item]['proxmox_vmid'] }}"
+      when: not (item in groups['proxmox_all_running'])
+      with_items:
+        - "{{ groups['toolbox_group'] }}"
+
+    - name: Wait for toolbox SSH to be ready
+      include_role:
+        name: ssh.wait-for
+      vars:
+        ssh__hostname: '{{ item }}'
+      with_items:
+        - "{{ groups['toolbox_group'] }}"
+  vars:
+    # proxmox node to create the VM on (Default: the first proxmox node in the inventory)
+    proxmox_node: proxmox_nodes[0]
 
 # - name: Create toolbox VM
 #   hosts: proxmox_nodes

@@ -1,0 +1,2 @@
+# ssh__host_with_new_key: name of the host that has a new SSH key to register (Required)
+# ssh__host_with_new_key: e.g., my-new-server

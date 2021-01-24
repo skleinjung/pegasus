@@ -1,0 +1,6 @@
+# ssh__host_to_update: hostname to update ssh known_host keys on (Default: localhost)
+ssh__host_to_update: localhost
+
+# ssh__update_global: if true, will update a host's global known_hosts, otherwise it will update the user's (Default: false)
+ssh__update_global: false
+

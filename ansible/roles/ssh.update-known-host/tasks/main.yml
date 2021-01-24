@@ -1,0 +1,17 @@
+---
+# shell ssh-keyscan -H {{ ssh__updated_host }}
+
+- name: Get new host key
+  local_action: shell ssh-keyscan "{{ ssh__host_with_new_key }}" 2> /dev/null
+  register: new_host_keys
+
+- name: Update SSH key for host
+  delegate_to: '{{ ssh__host_to_update }}'
+  become: yes
+  ansible.builtin.known_hosts:
+    name: toolbox
+    key: '{{ item }}'
+    path: '{{ ssh__update_global | ternary("/etc/ssh/ssh_known_hosts", "~/.ssh/known_hosts") }}'
+    state: present
+  with_items:
+    - '{{ new_host_keys.stdout_lines }}'

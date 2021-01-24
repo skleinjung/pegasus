@@ -1,0 +1,4 @@
+---
+- name: Wait for SSH to be ready
+  delegate_to: localhost
+  local_action: wait_for port="{{ ssh__port }}" host="{{ ssh__hostname }}" search_regex=OpenSSH sleep="{{ ssh__sleep }}"

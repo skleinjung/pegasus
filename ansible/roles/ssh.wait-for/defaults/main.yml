@@ -1,0 +1,6 @@
+# ssh__port: port to check for SSH connectivity (Default: 22)
+ssh__port: 22
+
+# ssh__sleep: time, in seconds, between connectino attempts (Default: 3)
+ssh__sleep: 3
+

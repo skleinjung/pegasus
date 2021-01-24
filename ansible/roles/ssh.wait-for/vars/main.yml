@@ -1,0 +1,3 @@
+# ssh__hostname: name of the host to wait for (Required)
+# ssh__hostname: e.g., my-server
+
