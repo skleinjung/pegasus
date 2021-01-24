@@ -1,0 +1,100 @@
+# Playbook used to bootstrap a new toolbox VM. This playbook creates the VM, adds it
+# to the appropriate groups, and waits for it to be ready.
+#
+# Usage:
+# 
+# Create VM: `ansible-playbook ... toolbox.yml -e new_vm_id=###`
+#   Variables:
+#     - max_memory: 4096
+#     - min_memory: 2048
+#     - proxmox_node: proxmox_nodes[0]
+#     - template_id: 105
+#
+# Destroy VM: `ansible-playbook ... toolbox.yml -e destroy=true`
+# Update VM: `ansible-playbook ... toolbox.yml`
+
+---
+- name: '{{ destroy | ternary("Destroy", "Create") }} toolbox VM'
+  hosts: '{{ proxmox_node }}'
+  post_tasks:
+    - name: Update dynamic inventory
+      meta: refresh_inventory
+  tasks:
+    - name: Create toolbox VM
+      block:
+        - name: Install cloud-init scripts
+          include_role:
+            name: proxmox.install-cloud-init-configurations
+          vars:
+            proxmox__base_vm_name: toolbox
+            proxmox__use_id_suffix: false
+
+        # since toolbox IS the node we use to access the Proxmox REST API, deploy this VM using the qm cli directly
+        - name: Create toolbox VM
+          ansible.builtin.shell: |
+            set -e
+            qm clone "{{ template_id }}" "{{ new_vm_id }}" --name toolbox
+            qm resize "{{ new_vm_id }}" scsi0 +12G
+            qm set "{{ new_vm_id }}" -memory "{{ max_memory }}"
+            qm set "{{ new_vm_id }}" -balloon "{{ min_memory }}"
+            qm set "{{ new_vm_id }}" --cicustom "user=config:snippets/toolbox-user-data.yml,meta=config:snippets/toolbox-metadata.yml"
+            qm start "{{ new_vm_id }}"
+      vars:
+        # maximum amount of memory to allow the toolbox to consume
+        max_memory: 4096
+        # minimum amount of memory to allocate to the toolbox
+        min_memory: 2048
+        # ID for the VM to use as a template
+        template_id: 105
+        # ID for the new toolbox VM (Required if creating, ignored otherwise)
+        new_vm_id: null
+      # TODO: error handling, destroy on error
+      when: not groups['toolbox_group'] and not destroy
+
+    - name: Destroy toolbox VMs
+      ansible.builtin.shell: |
+        set -e
+        qm stop "{{ hostvars[item]['proxmox_vmid'] }}"
+        qm destroy "{{ hostvars[item]['proxmox_vmid'] }}" --purge
+      when: destroy
+      with_items:
+        - "{{ groups['toolbox_group'] }}"
+  vars:
+    # set to true to destroy the toolbox instead of creating it
+    destroy: false
+    # proxmox node to create the VM on (Default: the first node in the inventory)
+    proxmox_node: proxmox_nodes[0]
+
+- name: Start all non-running VMs in toolbox_group
+  hosts: '{{ proxmox_node }}'
+  tasks:
+    - name: Start toolbox VMs
+      ansible.builtin.shell: |
+        set -e
+        qm start "{{ hostvars[item]['proxmox_vmid'] }}"
+      when: not (item in groups['proxmox_all_running'])
+      with_items:
+        - "{{ groups['toolbox_group'] }}"
+  vars:
+    # proxmox node to create the VM on (Default: the first proxmox node in the inventory)
+    proxmox_node: proxmox_nodes[0]
+
+- name: Wait for toolbox VMs to be ready
+  gather_facts: no
+  hosts: toolbox_group
+  tasks:
+    - name: Wait for SSH to respond on {{ inventory_hostname }}
+      include_role:
+        name: ssh.wait-for
+      vars:
+        ssh__hostname: toolbox
+
+    - name: Authorize new SSH keys for {{ inventory_hostname }}
+      include_role:
+        name: ssh.update-known-host
+      vars:
+        ssh__host_with_new_key: toolbox
+
+    - name: Wait for cloud-init to finish on {{ inventory_hostname }}
+      include_role:
+        name: cloud-init.wait-for

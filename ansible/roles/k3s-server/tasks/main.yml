@@ -30,7 +30,7 @@
 
 - name: Install arkade
   include_role:
-    name: install.arkade
+    name: arkade.install
 
 - name: Install k3sup
   ansible.builtin.shell: |

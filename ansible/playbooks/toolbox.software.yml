@@ -1,0 +1,37 @@
+# Playbook used to install the 'tools' on a 'toolbox' VM.
+---
+- name: Install toolbox tools
+  hosts: toolbox
+  tasks:
+    - name: Install apt-packages
+      ansible.builtin.apt:
+        install_recommends: no
+        name: 
+          - nfs-common
+          - python3-pip
+        state: latest
+        update_cache: yes
+
+    - name: Install 'arkade'
+      include_role:
+        name: arkade.install
+
+    - name: Install arkade tools
+      include_role:
+        name: arkade.get
+      vars:
+        arkade__tools:
+          - helm
+          - k3sup
+          - kubectl
+          - kustomize
+          - terraform
+          - yq
+
+    - name: Install required Python packages
+      ansible.builtin.pip:
+        name: 
+          - openshift
+          - pan-os-python
+          - proxmoxer
+          - requests

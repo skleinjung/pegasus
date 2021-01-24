@@ -1,0 +1,2 @@
+# arkade__tools: list of tools to get with arkade (Required)
+# arkade__tools: e.g., ['k3sup', 'kubectl']

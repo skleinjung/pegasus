@@ -1,0 +1,12 @@
+---
+- name: Install arkade tools
+  ansible.builtin.shell: |
+    set -e
+    arkade get {{ item }}
+    mv ~/.arkade/bin/{{ item }} /usr/local/bin/{{ item }}
+    chmod a+rx /usr/local/bin/{{ item }}
+    rm -rf ~/.arkade/bin/{{ item }}
+  args:
+    creates: /usr/local/bin/{{ item }}
+  with_items: 
+    - '{{ arkade__tools }}'
