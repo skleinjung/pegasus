@@ -4,7 +4,7 @@
     that: required_var is defined and required_var | length > 0 and required_var != None
     fail_msg: "{{ required_var }} needs to be set for the role to work "
     success_msg: "Required variable {{ required_var }} is defined"
-  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  delegate_to: toolbox
   loop_control:
     loop_var: required_var
   with_items:
@@ -15,7 +15,7 @@
     - proxmox__node
 
 - name: Start VMs
-  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  delegate_to: toolbox
   community.general.proxmox_kvm:
     api_user: '{{ proxmox__api_user }}'
     api_password: '{{ proxmox__api_password }}'

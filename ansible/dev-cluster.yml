@@ -1,6 +1,6 @@
 ---
 - name: Create k3s-dev-server VM
-  hosts: proxmox_controller
+  hosts: toolbox
   tasks:
   - name: Create new cloned VM
     include_role:

@@ -2,11 +2,7 @@ all:
   children:
     control_server:     # dynamically-created group of control-server nodes
     k3s_dev:            # dynamically-created group of k3s dev server nodes
-    toolbox_group:            # dynamically-created group of toolbox server nodes
-
-    proxmox_controller: # the host used to execute proxmox API calls from
-      hosts:
-        minerva:
+    toolbox_group:      # dynamically-created group of toolbox server nodes
    
     servers:
       children:
@@ -15,6 +11,7 @@ all:
       hosts:
         lockbox:
         pfsense:
+        toolbox:
 
     workstations:
       hosts:

@@ -4,7 +4,7 @@
     that: required_var is defined and required_var | length > 0 and required_var != None
     fail_msg: "{{ required_var }} needs to be set for the role to work "
     success_msg: "Required variable {{ required_var }} is defined"
-  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  delegate_to: toolbox
   loop_control:
     loop_var: required_var
   with_items:
@@ -18,12 +18,12 @@
     - proxmox__template
 
 - name: Create instance id
-  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  delegate_to: toolbox
   set_fact:
     proxmox__clone_instance_id: "{{ lookup( 'password', '/dev/null length=32' ) | to_uuid | lower }}"
 
 - name: Create VM name
-  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  delegate_to: toolbox
   set_fact:
     proxmox__clone_name: '{{ proxmox__clone_type }}-{{ proxmox__clone_instance_id[:3] }}'
 
@@ -59,8 +59,7 @@
     proxmox_default_behavior: no_defaults
     state: present
     timeout: '{{ proxmox__timeout }}'
-  delegate_to: "{{ groups['proxmox_controller'][0] }}"
-
+  delegate_to: toolbox
 # API returns before the VMID can be looked up on the next step, so we delay just a bit
 - name: Wait for new VM clone to be created
   wait_for:
@@ -88,4 +87,4 @@
     state: present
     timeout: '{{ proxmox__timeout }}'
     update: yes
-  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  delegate_to: toolbox
