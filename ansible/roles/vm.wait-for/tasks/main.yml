@@ -1,0 +1,16 @@
+---
+- name: Wait for SSH to respond on {{ inventory_hostname }}
+  include_role:
+    name: ssh.wait-for
+  vars:
+    ssh__hostname: '{{ inventory_hostname }}'
+
+- name: Authorize new SSH keys for {{ inventory_hostname }}
+  include_role:
+    name: ssh.update-known-host
+  vars:
+    ssh__host_with_new_key: '{{ inventory_hostname }}'
+
+- name: Wait for cloud-init to finish on {{ inventory_hostname }}
+  include_role:
+    name: cloud-init.wait-for

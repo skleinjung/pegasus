@@ -1,8 +1,0 @@
-# base name of a VM to generate metadata for; if null, only the archetypal user-data scripts are installed (Default: null)
-proxmox__base_vm_name: null
-
-# directory on the proxmox host containing config information; should have a 'snippets' subdir
-proxmox__cloud_config_dataset_path: /large-pool/config
-
-# true if part of the VM's machine ID should be appended to its hostname [Default: true]
-proxmox__use_id_suffix: true

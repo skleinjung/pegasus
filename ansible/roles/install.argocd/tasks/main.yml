@@ -1,4 +1,5 @@
 - name: Install argocd
+  delegate_to: toolbox
   ansible.builtin.shell: |
     arkade install argocd && \
     mkdir -p /etc/ansible-locks && \

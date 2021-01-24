@@ -1,0 +1,8 @@
+# Playbook used to install up-to-date cloud-init user-data on all Proxmox nodes.
+---
+- name: Install toolbox tools
+  hosts: proxmox_nodes
+  tasks:
+    - name: Update cloud-init user data
+      include_role:
+        name: proxmox.install-cloud-init-user-data

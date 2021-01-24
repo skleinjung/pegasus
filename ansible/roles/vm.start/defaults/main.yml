@@ -1,3 +1,2 @@
-proxmox__new_vm_group: new_vms
 vm__node: typhon
 vm__timeout: 300

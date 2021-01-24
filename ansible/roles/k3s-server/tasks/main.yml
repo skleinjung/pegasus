@@ -1,21 +1,9 @@
 ---
-- name: Verify that required string variables are defined
-  assert:
-    that: required_var is defined and required_var | length > 0 and required_var != None
-    fail_msg: "{{ required_var }} needs to be set for the role to work "
-    success_msg: "Required variable {{ required_var }} is defined"
-  delegate_to: toolbox
-  loop_control:
-    loop_var: required_var
-  with_items:
-    - k3s_server__ip_end
-    - k3s_server__ip_start
-
-- name: Install pip
-  apt:
-    name: python3-pip
-    state: latest
-    install_recommends: no
+# - name: Install pip
+#   apt:
+#     name: python3-pip
+#     state: latest
+#     install_recommends: no
 
 - name: Install NFS client
   apt:
@@ -23,64 +11,69 @@
     state: latest
     install_recommends: no
 
-- name: Install OpenShift module for Python
-  pip:
-    name: openshift
-    state: latest
+# - name: Install OpenShift module for Python
+#   pip:
+#     name: openshift
+#     state: latest
 
-- name: Install arkade
-  include_role:
-    name: arkade.install
+# - name: Install arkade
+#   include_role:
+#     name: arkade.install
 
-- name: Install k3sup
-  ansible.builtin.shell: |
-    arkade get k3sup
-    mv ~/.arkade/bin/k3sup /usr/local/bin/k3sup
-    chmod a+rx /usr/local/bin/k3sup
-    rm -rf ~/.arkade
-  args:
-    creates: /usr/local/bin/k3sup
-  become: true
+# - name: Install k3sup
+#   ansible.builtin.shell: |
+#     arkade get k3sup
+#     mv ~/.arkade/bin/k3sup /usr/local/bin/k3sup
+#     chmod a+rx /usr/local/bin/k3sup
+#     rm -rf ~/.arkade
+#   args:
+#     creates: /usr/local/bin/k3sup
+#   become: true
 
 - name: Create kube config directory
+  delegate_to: toolbox
   ansible.builtin.file:
     path: ~/.kube
     state: directory
 
 - name: Install k3s cluster
+  delegate_to: toolbox
   ansible.builtin.shell: |
+    set -e
     k3sup install \
-      --host "$(hostame)" \
-      --ip "127.0.0.1" \
+      --context dev \
+      --host "{{ inventory_hostname }}" \
       --k3s-extra-args '--disable servicelb --disable traefik --with-node-id' \
-      --local \
-      --local-path ~/.kube/config
-    echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
+      --local-path ~/.kube/config \
+      --ssh-key /home/ansible/.ssh/id_ed25519 \
+      --user ansible \
+      && sed -i 's/127\.0\.0\.1/{{ inventory_hostname }}/' ~/.kube/config
   args:
     creates: ~/.kube/config
   become: true
 
-- name: 'Setup kubectl for users: {{ k3s_server__kubectl_users }}'
-  block:
-    - name: Copy kube config
-      ansible.builtin.copy:
-        dest: /home/{{ item }}/.kube/
-        group: '{{ item }}'
-        owner: '{{ item }}'
-        remote_src: yes
-        src: ~/.kube/config
-      with_items: '{{ k3s_server__kubectl_users }}'
+# - name: 'Setup kubectl for users: {{ k3s_server__kubectl_users }}'
+#   block:
+#     - name: Copy kube config
+#       ansible.builtin.copy:
+#         dest: /home/{{ item }}/.kube/
+#         group: '{{ item }}'
+#         owner: '{{ item }}'
+#         remote_src: yes
+#         src: ~/.kube/config
+#       with_items: '{{ k3s_server__kubectl_users }}'
 
-    - name: Set KUBECONFIG environment variable
-      ansible.builtin.lineinfile:
-        dest: /home/{{ item }}/.bashrc
-        group: '{{ item }}'
-        line: "export KUBECONFIG=~/.kube/config"
-        owner: '{{ item }}'
-        state: present
-      with_items: '{{ k3s_server__kubectl_users }}'
+#     - name: Set KUBECONFIG environment variable
+#       ansible.builtin.lineinfile:
+#         dest: /home/{{ item }}/.bashrc
+#         group: '{{ item }}'
+#         line: "export KUBECONFIG=~/.kube/config"
+#         owner: '{{ item }}'
+#         state: present
+#       with_items: '{{ k3s_server__kubectl_users }}'
 
 - name: Wait for nodes to be ready
+  delegate_to: toolbox
   delay: 2
   register: nodes
   retries: 30
@@ -96,10 +89,12 @@
     metallb__ip_start: '{{ k3s_server__ip_start }}'
 
 - name: Install nfs-client-provisioner
+  delegate_to: toolbox
   ansible.builtin.shell: |
+    set -e
     arkade install nfs-client-provisioner \
       --nfs-server {{ k3s_server__nfs_server }} \
-      --nfs-path {{ k3s_server__nfs_path}} && \
+      --nfs-path {{ k3s_server__nfs_path}} \
       --set storageClass.name=nfs
     mkdir -p /etc/ansible-locks && \
     touch /etc/ansible-locks/nfs-client-provisioner
@@ -107,7 +102,9 @@
     creates: "/etc/ansible-locks/nfs-client-provisioner"
 
 - name: Install traefik2 ingress controller
+  delegate_to: toolbox
   ansible.builtin.shell: |
+    set -e
     arkade install traefik2 \
       --dashboard
     mkdir -p /etc/ansible-locks && \

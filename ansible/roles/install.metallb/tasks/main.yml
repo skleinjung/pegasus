@@ -13,6 +13,7 @@
     - metallb__manifest
     
 - name: Create the metallb Namespace
+  delegate_to: toolbox
   community.kubernetes.k8s:
     definition:
       api_version: v1
@@ -22,6 +23,7 @@
     state: present
 
 - name: Get the metallb Secret, if it already exists
+  delegate_to: toolbox
   community.kubernetes.k8s_info:
     api_version: v1
     kind: Secret
@@ -30,6 +32,7 @@
   register: metallb_secret
 
 - name: Create the metallb Secret
+  delegate_to: toolbox
   community.kubernetes.k8s:
     definition:
       api_version: v1
@@ -43,6 +46,7 @@
   when: (metallb_secret.resources | count) == 0
 
 - name: Create the metallb ConfigMap
+  delegate_to: toolbox
   community.kubernetes.k8s:
     definition:
       apiVersion: v1
@@ -60,6 +64,7 @@
     state: present
 
 - name: Get a list of all Deployments in the metallb namespace
+  delegate_to: toolbox
   community.kubernetes.k8s_info:
     api_version: apps/v1
     kind: Deployment
@@ -67,6 +72,7 @@
   register: metallb_deployments
 
 - name: Install metallb
+  delegate_to: toolbox
   ansible.builtin.shell: |
     kubectl apply -f {{ metallb__manifest | quote }}
   when: (metallb_deployments.resources | count) == 0

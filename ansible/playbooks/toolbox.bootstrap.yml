@@ -14,6 +14,8 @@
 # Update VM: `ansible-playbook ... toolbox.yml`
 
 ---
+- import_playbook: proxmox.update-user-data.yml
+
 - name: '{{ destroy | ternary("Destroy", "Create") }} toolbox VM'
   hosts: '{{ proxmox_node }}'
   post_tasks:
@@ -24,9 +26,9 @@
       block:
         - name: Install cloud-init scripts
           include_role:
-            name: proxmox.install-cloud-init-configurations
+            name: proxmox.install-cloud-init-metadata
           vars:
-            proxmox__base_vm_name: toolbox
+            proxmox__vm_name: toolbox
             proxmox__use_id_suffix: false
 
         # since toolbox IS the node we use to access the Proxmox REST API, deploy this VM using the qm cli directly
@@ -85,16 +87,14 @@
   tasks:
     - name: Wait for SSH to respond on {{ inventory_hostname }}
       include_role:
-        name: ssh.wait-for
-      vars:
-        ssh__hostname: toolbox
+        name: vm.wait-for
 
-    - name: Authorize new SSH keys for {{ inventory_hostname }}
-      include_role:
-        name: ssh.update-known-host
-      vars:
-        ssh__host_with_new_key: toolbox
+    - name: Copy SSH key to server
+      ansible.builtin.shell: |
+        set -e
+        mkdir -p /home/ansible/.ssh
+        echo -n "{{ ssh_key }}" > /home/ansible/.ssh/id_ed25519
+        chmod 700 /home/ansible/.ssh
+        chmod 600 /home/ansible/.ssh/*
+        chown -R ansible.ansible /home/ansible/.ssh
 
-    - name: Wait for cloud-init to finish on {{ inventory_hostname }}
-      include_role:
-        name: cloud-init.wait-for

@@ -1,0 +1,2 @@
+# directory on the proxmox host containing config information; should have a 'snippets' subdir
+proxmox__cloud_config_dataset_path: /large-pool/config

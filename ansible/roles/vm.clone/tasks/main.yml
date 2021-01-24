@@ -1,0 +1,66 @@
+---
+- name: Create instance id
+  set_fact:
+    vm__clone_instance_id: "{{ lookup( 'password', '/dev/null length=32' ) | to_uuid | lower }}"
+
+- name: Create VM name
+  set_fact:
+    vm__clone_name: '{{ vm__clone_basename }}-{{ vm__clone_instance_id[:3] }}'
+
+- name: Create VM name
+  delegate_to: '{{ vm__node }}'
+  set_fact:
+    vm__clone_instance_id: '{{ vm__clone_instance_id }}'
+    vm__clone_name: '{{ vm__clone_name }}'
+  delegate_facts: true
+
+- name: Write cloud-init metadata
+  delegate_to: '{{ vm__node }}'
+  copy:
+    content: |
+      instance-id: {{ vm__clone_instance_id }}
+      instance_id: {{ vm__clone_instance_id }}
+      local-hostname: {{ vm__clone_name }}
+      local_hostname: {{ vm__clone_name }}
+      vm_name: {{ vm__clone_name }}
+    dest: '{{ vm__node_config_root }}/{{ vm__clone_name }}-metadata.yml'
+    mode: u=rw,g=r,o=r
+
+- name: Clone VM template
+  community.general.proxmox_kvm:
+    api_user: '{{ proxmox__api_user }}'
+    api_password: '{{ proxmox__api_password }}'
+    api_host: '{{ proxmox__api_host }}'
+    clone: '{{ vm__template }}'
+    format: unspecified
+    full: no
+    name: '{{ vm__clone_name }}'
+    node: '{{ vm__node }}'
+    proxmox_default_behavior: no_defaults
+    state: present
+    timeout: '{{ vm__timeout }}'
+
+# API returns before the VMID can be looked up on the next step, so we delay just a bit
+- name: Wait for new VM clone to be created
+  wait_for:
+    timeout: 10
+
+- name: Add new VMs to inventory
+  add_host:
+    name: '{{ vm__clone_name }}'
+    groups: '{{ vm__inventory_group }}'
+
+- name: Reconfigure clone
+  community.general.proxmox_kvm:
+    api_user: '{{ proxmox__api_user }}'
+    api_password: '{{ proxmox__api_password }}'
+    api_host: '{{ proxmox__api_host }}'
+    balloon: '{{ proxmox__balloon | default(omit) }}'
+    cicustom: user=config:snippets/{{ vm__clone_basename }}-user-data.yml,meta=config:snippets/{{ vm__clone_name }}-metadata.yml
+    memory: '{{ proxmox__memory | default(omit) }}'
+    name: '{{ vm__clone_name }}'
+    node: '{{ vm__node }}'
+    proxmox_default_behavior: no_defaults
+    state: present
+    timeout: '{{ vm__timeout }}'
+    update: yes

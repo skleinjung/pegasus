@@ -8,10 +8,10 @@ all:
       children:
         control_server:
         k3s_dev:
+        toolbox_group:
       hosts:
         lockbox:
         pfsense:
-        toolbox:
 
     workstations:
       hosts:

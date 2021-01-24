@@ -1,0 +1,20 @@
+---
+- name: Create instance id
+  set_fact:
+    proxmox__instance_id: "{{ lookup( 'password', '/dev/null length=32' ) | to_uuid | lower }}"
+  when: not proxmox__instance_id
+
+- name: Create VM name
+  set_fact:
+    proxmox__clone_name: '{{ proxmox__vm_name }}{{ proxmox__use_id_suffix | ternary("-" + proxmox__instance_id[:3], "") }}'
+
+- name: Write cloud-init metadata
+  copy:
+    content: |
+      instance-id: {{ proxmox__instance_id }}
+      instance_id: {{ proxmox__instance_id }}
+      local-hostname: {{ proxmox__clone_name }}
+      local_hostname: {{ proxmox__clone_name }}
+      vm_name: {{ proxmox__clone_name }}
+    dest: '{{ proxmox__cloud_config_root }}/{{ proxmox__clone_name }}-metadata.yml'
+    mode: u=rw,g=r,o=r

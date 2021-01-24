@@ -9,7 +9,7 @@
   delegate_to: '{{ ssh__host_to_update }}'
   become: yes
   ansible.builtin.known_hosts:
-    name: toolbox
+    name: '{{ inventory_hostname }}'
     key: '{{ item }}'
     path: '{{ ssh__update_global | ternary("/etc/ssh/ssh_known_hosts", "~/.ssh/known_hosts") }}'
     state: present

@@ -1,50 +1,30 @@
 ---
+- import_playbook: playbooks/proxmox.update-user-data.yml
+
 - name: Create k3s-dev-server VM
   hosts: toolbox
+  post_tasks:
+  - name: Update dynamic inventory
+    meta: refresh_inventory
   tasks:
   - name: Create new cloned VM
     include_role:
-      name: proxmox.clone-vm
+      name: vm.clone
     vars:
       proxmox__balloon: 2048
-      proxmox__clone_type: k3s-dev-server
-      proxmox__inventory_group: new_servers
+      vm__clone_basename: k3s-dev-server
+      vm__inventory_group: new_servers
       proxmox__memory: 4096
-      proxmox__template: ubuntu-server-16gb-20210117
+      vm__template: ubuntu-server-16gb-20210117
     when: not groups['k3s_dev']
 
-- name: Ensure existing k3s-dev server is running
+- name: Ensure k3s-dev servers and agents are running
   hosts: k3s_dev
   gather_facts: no
   tasks:
     - name: Start VM - {{ inventory_hostname }}
       include_role:
-        name: proxmox.start-vms
-
-- name: Ensure connectivity for new k3s-dev server
-  hosts: "{{ groups['new_servers'] | default([]) }}"
-  gather_facts: no
-  post_tasks:
-    - name: Add new VMs to inventory
-      add_host:
-        name: '{{ inventory_hostname }}'
-        groups: k3s_dev
-  tasks:
-    - name: Start VM - {{ inventory_hostname }}
-      include_role:
-        name: proxmox.start-vms
-    
-    - name: Update ssh identity for {{ inventory_hostname }}
-      include_role:
-        name: util.update-ssh-identity
-      vars:
-        util__new_host: '{{ inventory_hostname }}'
-        util__target_host: localhost
-        util__target_user: sean
-
-    - name: Wait for cloud-init to finish on {{ inventory_hostname }}
-      include_role:
-        name: util.wait-for-cloud-init
+        name: vm.start
 
 - name: Setup k3os environment
   hosts: k3s_dev

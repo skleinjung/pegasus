@@ -11,7 +11,7 @@ packages:
 runcmd:
   - dhclient -r
   - dhclient
-user: ansible
+user: pegasus
 users:
   - name: ansible
     groups: sudo
@@ -35,7 +35,3 @@ write_files:
       Subsystem sftp    /usr/lib/openssh/sftp-server
       PasswordAuthentication no
       AllowUsers ansible
-write_files:
-  - path: /home/ansible/.ssh/config
-    content: |
-      CheckHostIP no

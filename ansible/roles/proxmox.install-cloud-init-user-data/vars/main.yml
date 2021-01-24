@@ -1,0 +1,2 @@
+proxmox__cloud_config_root: '{{ proxmox__cloud_config_dataset_path }}/snippets'
+
