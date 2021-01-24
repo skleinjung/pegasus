@@ -1,11 +1,43 @@
+---
+- name: Verify that required string variables are defined
+  assert:
+    that: required_var is defined and required_var | length > 0 and required_var != None
+    fail_msg: "{{ required_var }} needs to be set for the role to work "
+    success_msg: "Required variable {{ required_var }} is defined"
+  delegate_to: "{{ groups['proxmox_controller'][0] }}"
+  loop_control:
+    loop_var: required_var
+  with_items:
+    - proxmox__cloud_config_root
+
+
 - name: Install cloud-init configurations
   copy:
-    dest: '{{ cloud_config_root }}'
+    dest: '{{ proxmox__cloud_config_root }}'
     group: proxmox
     owner: root
     src: '{{ item }}'
   with_fileglob:
   - cloud-config/*
 
+- name: Create instance id
+  set_fact:
+    proxmox__clone_instance_id: "{{ lookup( 'password', '/dev/null length=32' ) | to_uuid | lower }}"
+  when: proxmox__base_vm_name
 
-    
+- name: Create VM name
+  set_fact:
+    proxmox__clone_name: '{{ proxmox__base_vm_name }}{{ proxmox__use_id_suffix | ternary("-" + proxmox__clone_instance_id[:3], "") }}'
+  when: proxmox__base_vm_name
+
+- name: Write cloud-init metadata
+  copy:
+    content: |
+      instance-id: {{ proxmox__clone_instance_id }}
+      instance_id: {{ proxmox__clone_instance_id }}
+      local-hostname: {{ proxmox__clone_name }}
+      local_hostname: {{ proxmox__clone_name }}
+      vm_name: {{ proxmox__clone_name }}
+    dest: '{{ proxmox__cloud_config_root }}/{{ proxmox__clone_name }}-metadata.yml'
+    mode: u=rw,g=r,o=r
+  when: proxmox__base_vm_name
