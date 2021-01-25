@@ -1,0 +1,107 @@
+---
+- name: Enumerate services on host
+  ansible.builtin.service_facts: {}
+
+- name: Install k3s cluster
+  delegate_to: toolbox
+  ansible.builtin.shell: |
+    set -e
+    k3sup install \
+      --host "{{ inventory_hostname }}" \
+      --k3s-extra-args '--with-node-id' \
+      --no-extras \
+      --ssh-key "{{ k3s__ansible_ssh_key }}" \
+      --user ansible
+  when: ('k3s.service' is not in ansible_facts.services) or (ansible_facts.services['k3s.service'].state != 'running')
+
+- name: Create kube config directory
+  delegate_to: toolbox
+  ansible.builtin.file:
+    path: '{{ k3s__kubeconfig_path }}'
+    state: directory
+
+- name: Download cluster config
+  include_role:
+    name: k3s.fetch-config
+  vars:
+    # having to know the key here, and in the above task is gross... but it works for now :(
+    ansible_ssh_private_key_file: "{{ k3s__ansible_ssh_key }}"
+    k3s__config_path: "{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}"
+    k3s__destination_host: toolbox
+
+- name: Wait for node to be ready
+  delegate_to: toolbox
+  delay: 2
+  register: nodes
+  retries: 30
+  shell: "kubectl --kubeconfig='{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}' get nodes"
+  until:      
+    - '" Ready "  in nodes.stdout'
+
+- name: Get existing nfs-client-provisioner Deployment
+  delegate_to: toolbox
+  community.kubernetes.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: nfs-client-provisioner
+    namespace: default
+  register: nfs_client_provisioner
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}'
+
+- name: Initialize NFS provisioning
+  block:
+    - name: Install NFS client on node
+      apt:
+        name: nfs-common
+        state: latest
+        install_recommends: no
+
+    - name: Install nfs-client-provisioner
+      delegate_to: toolbox
+      ansible.builtin.shell: |
+        set -e
+        arkade install nfs-client-provisioner \
+          --kubeconfig "{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}" \
+          --nfs-server "{{ k3s__nfs_server }}" \
+          --nfs-path "{{ k3s__nfs_path}}" \
+          --set storageClass.name=nfs
+  when: k3s__nfs_enabled and ((nfs_client_provisioner.resources | count) == 0)
+
+# - name: Install metallb
+#   include_role:
+#     name: install.metallb
+#   vars:
+#     metallb__ip_end: '{{ k3s_server__ip_end }}'
+#     metallb__ip_start: '{{ k3s_server__ip_start }}'
+
+# - name: Install traefik2 ingress controller
+#   delegate_to: toolbox
+#   ansible.builtin.shell: |
+#     set -e
+#     arkade install traefik2 \
+#       --dashboard
+#     mkdir -p /etc/ansible-locks && \
+#     touch /etc/ansible-locks/traefik2
+#   args:
+#     creates: "/etc/ansible-locks/traefik2"
+
+- name: Get existing argocd Deployment
+  delegate_to: toolbox
+  community.kubernetes.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: argocd-server
+    namespace: argocd
+  register: argocd_server
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}'
+
+- name: Install argocd
+  become: false
+  delegate_to: toolbox
+  ansible.builtin.shell: |
+    set -e
+    arkade install argocd \
+      --kubeconfig "{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}"
+  when: (argocd_server.resources | count) == 0

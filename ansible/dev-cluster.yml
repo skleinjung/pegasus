@@ -2,6 +2,7 @@
 - import_playbook: playbooks/proxmox.update-user-data.yml
 
 - name: Create k3s-dev-server VM
+  gather_facts: no
   hosts: toolbox
   post_tasks:
   - name: Update dynamic inventory
@@ -19,25 +20,32 @@
     when: not groups['k3s_dev']
 
 - name: Ensure k3s-dev servers and agents are running
-  hosts: k3s_dev
   gather_facts: no
+  hosts: k3s_dev
   tasks:
     - name: Start VM - {{ inventory_hostname }}
       include_role:
         name: vm.start
 
-- name: Setup k3os environment
-  hosts: k3s_dev
+- name: Setup k3os cluster
   gather_facts: no
+  hosts: k3s_dev
   tasks:
   - name: Apply k3s-server role
     include_role:
-      name: k3s-server
+      name: k3s.server
     vars:
-      k3s_server__ip_end: 10.0.1.199
-      k3s_server__ip_start: 10.0.1.100
-      k3s_server__kubectl_users:
-      - sean
-      k3s_server__nfs_path: /export/k3s-development
+      k3s__nfs_enabled: true
+      k3s__nfs_server: lockbox.pegasus
+      k3s__nfs_path: /export/k3s-development
 
-
+- name: Save cluster config locally
+  become: true
+  gather_facts: no
+  hosts: k3s_dev[0]
+  tasks:
+  - name: Download cluster config
+    include_role:
+      name: k3s.fetch-config
+    vars:
+      k3s__config_path: /home/sean/.kube/config.d/{{ groups['k3s_dev'][0] }}

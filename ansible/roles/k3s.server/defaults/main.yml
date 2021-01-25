@@ -1,0 +1,8 @@
+# k3s__nfs_enabled: if true, will configure an NFS storage provisioner in the cluster (Default: false)
+k3s__nfs_enabled: false
+
+# k3s__kubeconfig_path: base directory for kubeconfig files (Default: /etc/kubeconfig)
+k3s__kubeconfig_path: /etc/kubeconfig
+
+# k3s__ansible_ssh_key: path to the SSH key to use when authenticating to k3s nodes (Default: /home/ansible/.ssh/id_ed25519)
+k3s__ansible_ssh_key: /home/ansible/.ssh/id_ed25519
