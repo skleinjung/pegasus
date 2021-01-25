@@ -1,0 +1,5 @@
+# k3s__config_path: path to store the kubeconfig file at (Default: ~/.kube/config)
+k3s__config_path: ~/.kube/config
+
+# k3s__destination_host: name of the host to save the kubeconfig file on (Default: localhost)
+k3s__destination_host: localhost

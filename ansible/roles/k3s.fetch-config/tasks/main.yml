@@ -1,0 +1,16 @@
+---
+- name: Save configuration for cluster '{{ inventory_hostname }}' in '{{ k3s__config_path }}'
+  delegate_to: '{{ k3s__destination_host }}'
+  ansible.builtin.synchronize:
+    dest: '{{ k3s__config_path }}'
+    mode: pull
+    rsync_path: "sudo -u root rsync"
+    src: /etc/rancher/k3s/k3s.yaml
+
+- name: Replace loopback with server DNS
+  delegate_to: '{{ k3s__destination_host }}'
+  ansible.builtin.lineinfile:
+    backrefs: yes
+    line: '\1server: https://{{ inventory_hostname }}\2'
+    path: '{{ k3s__config_path }}'
+    regexp: '^( *)server: https://127.0.0.1(:[0-9]+)?$'
