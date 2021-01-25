@@ -38,6 +38,15 @@
       k3s__nfs_enabled: true
       k3s__nfs_server: lockbox.pegasus
       k3s__nfs_path: /export/k3s-development
+  vars:
+    argocd__admin_password_hash: "$2a$10$LeKBprcARUlaiqBpdFJHUux4KJD1/pmgeeG7QMXwg0hBElVmS1./S"
+    argocd__root_application_path: root
+    argocd__root_application_revision: development
+    argocd__root_application_url: https://github.com/skleinjung/pegasus-deployments.git
+    argocd__helm_repositories:
+      - name: bitnami
+        type: helm
+        url: https://charts.bitnami.com/bitnami
 
 - name: Save cluster config locally
   become: true

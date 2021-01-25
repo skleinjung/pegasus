@@ -86,22 +86,8 @@
 #   args:
 #     creates: "/etc/ansible-locks/traefik2"
 
-- name: Get existing argocd Deployment
-  delegate_to: toolbox
-  community.kubernetes.k8s_info:
-    api_version: apps/v1
-    kind: Deployment
-    name: argocd-server
-    namespace: argocd
-  register: argocd_server
-  environment:
-    K8S_AUTH_KUBECONFIG: '{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}'
-
-- name: Install argocd
-  become: false
-  delegate_to: toolbox
-  ansible.builtin.shell: |
-    set -e
-    arkade install argocd \
-      --kubeconfig "{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}"
-  when: (argocd_server.resources | count) == 0
+- name: Bootstrap argocd
+  include_role:
+    name: argocd
+  vars:
+    argocd__kubeconfig: '{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}'

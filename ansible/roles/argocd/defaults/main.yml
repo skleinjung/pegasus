@@ -1,0 +1,18 @@
+# argocd__admin_password_hash: if set, the default ArgoCD password will be changed to the given value; MUST BE A BCRYPT HASH
+argocd__admin_password_hash: null
+# See https://www.browserling.com/tools/bcrypt
+
+# argocd__helm_repositories: Helm repository configuration, suitable for including in argocd-cm
+argocd__helm_repositories: []
+
+# argocd__kubeconfig: path to the kubeconfig file to use for cluster connectivity
+argocd__kubeconfig: ~/.kube/config
+
+# argocd__root_application_name: name of the ArgoCD root application
+argocd__root_application_name: root
+# argocd__root_application_path: path inside the repositoryh of the ArgoCD root application
+argocd__root_application_path: '/'
+# argocd__root_application_revision: git revision of the ArgoCD root application
+argocd__root_application_revision: master
+# argocd__root_application_url: git URL of the ArgoCD root application
+# argocd__root_application_url: null

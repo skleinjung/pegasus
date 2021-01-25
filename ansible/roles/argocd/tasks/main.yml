@@ -1,0 +1,72 @@
+---
+- name: Get existing argocd Deployment
+  become: false
+  delegate_to: toolbox
+  community.kubernetes.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: argocd-server
+    namespace: argocd
+  register: argocd_server
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ argocd__kubeconfig }}'
+
+- name: Install argocd
+  become: false
+  delegate_to: toolbox
+  ansible.builtin.shell: |
+    set -e
+    arkade install argocd \
+      --kubeconfig "{{ argocd__kubeconfig }}"
+  when: (argocd_server.resources | count) == 0
+
+# - name: Wait for argocd-server
+#   become: false
+#   delegate_to: toolbox
+#   community.kubernetes.k8s_info:
+#     kind: Pod
+#     label_selectors:
+#       - "app.kubernetes.io/name=argocd-server"
+#     wait_condition:
+#       status: 'True'
+#       type: Ready
+#     wait_timeout: 360
+#     wait: yes
+#   environment:
+#     K8S_AUTH_KUBECONFIG: '{{ argocd__kubeconfig }}'
+
+- name: Update admin password
+  become: false
+  delegate_to: toolbox
+  community.kubernetes.k8s:
+    state: present
+    definition: "{{ lookup('template', 'argocd-secret.yml') | from_yaml }}"
+    validate:
+      fail_on_error: yes
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ argocd__kubeconfig }}'
+  when: argocd__admin_password_hash
+
+- name: Update Helm repository configurations
+  become: false
+  delegate_to: toolbox
+  community.kubernetes.k8s:
+    state: present
+    definition: "{{ lookup('template', 'argocd-cm.yml') | from_yaml }}"
+    validate:
+      fail_on_error: yes
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ argocd__kubeconfig }}'
+  when: argocd__helm_repositories
+
+- name: Deploy root application
+  become: false
+  delegate_to: toolbox
+  community.kubernetes.k8s:
+    state: present
+    definition: "{{ lookup('template', 'root-application.yml') | from_yaml }}"
+    validate:
+      fail_on_error: yes
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ argocd__kubeconfig }}'
+  when: argocd__root_application_url
