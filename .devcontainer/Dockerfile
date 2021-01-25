@@ -25,6 +25,7 @@ RUN userdel vscode \
 
 # install arkade and useful tools
 RUN curl -sLS https://dl.get-arkade.dev | sh \
+  && arkade get kubectl \
   && arkade get kustomize \
   && arkade get terraform \
   && arkade get yq \
