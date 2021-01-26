@@ -56,7 +56,7 @@
     api_password: '{{ proxmox__api_password }}'
     api_host: '{{ proxmox__api_host }}'
     balloon: '{{ proxmox__balloon | default(omit) }}'
-    cicustom: user=config:snippets/{{ vm__clone_basename }}-user-data.yml,meta=config:snippets/{{ vm__clone_name }}-metadata.yml
+    cicustom: user=config:snippets/{{ vm__clone_type }}-user-data.yml,meta=config:snippets/{{ vm__clone_name }}-metadata.yml
     memory: '{{ proxmox__memory | default(omit) }}'
     name: '{{ vm__clone_name }}'
     node: '{{ vm__node }}'

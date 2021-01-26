@@ -2,5 +2,9 @@ plugin: constructed
 strict: False
 
 groups:
-    k3s_dev: inventory_hostname.startswith('k3s-dev-')
+    dev: "inventory_hostname | regex_search('.+-dev($|-.+)')"
+    k3s_agents: inventory_hostname.startswith('k3s-agent-')
+    k3s_nodes: inventory_hostname.startswith('k3s-')
+    k3s_servers: inventory_hostname.startswith('k3s-server-')
+    prod: "inventory_hostname | regex_search('.+-prod($|-.+)')"
     toolbox_group: inventory_hostname == 'toolbox'

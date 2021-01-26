@@ -1,13 +1,19 @@
 all:
   children:
-    control_server:     # dynamically-created group of control-server nodes
-    k3s_dev:            # dynamically-created group of k3s dev server nodes
+    # environments
+    dev:
+    prod:
+
+    # kubernetes node types
+    k3s_agents:         # dynamically-created group of k3s dev agent nodes
+    k3s_nodes:          # dynamically-created group of k3s nodes (of any type)
+    k3s_servers:        # dynamically-created group of k3s dev agent nodes
+    
     toolbox_group:      # dynamically-created group of toolbox server nodes
    
     servers:
       children:
-        control_server:
-        k3s_dev:
+        k3s_nodes:
         toolbox_group:
       hosts:
         lockbox:

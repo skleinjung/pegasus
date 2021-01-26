@@ -2,7 +2,7 @@
 vm__inventory_group: new_vms
 
 # vm__clone_type: type for the new VM, which will build the name and user-data scripts
-vm__clone_type: vm__clone_basename
+vm__clone_type: '{{ vm__clone_basename }}'
 
 # vm__node: proxmox node to create the VM on
 vm__node: typhon
