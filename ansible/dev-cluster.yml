@@ -27,10 +27,14 @@
       include_role:
         name: vm.start
 
-- name: Setup k3os cluster
+- name: Setup k3s cluster
   gather_facts: no
   hosts: k3s_dev
   tasks:
+  - name: Load environment configuration
+    include_vars:
+      file: config/development.yaml
+      name: config
   - name: Apply k3s-server role
     include_role:
       name: k3s.server
@@ -47,6 +51,12 @@
       - name: bitnami
         type: helm
         url: https://charts.bitnami.com/bitnami
+      - name: traefik
+        type: helm
+        url: https://helm.traefik.io/traefik
+    sealed_secrets__master_key: '{{ config.sealed_secrets_master_key }}'
+    
+# next, bootstrap argocd independently instead of inside the k3s.server
 
 - name: Save cluster config locally
   become: true

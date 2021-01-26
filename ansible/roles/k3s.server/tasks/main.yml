@@ -68,23 +68,11 @@
           --set storageClass.name=nfs
   when: k3s__nfs_enabled and ((nfs_client_provisioner.resources | count) == 0)
 
-# - name: Install metallb
-#   include_role:
-#     name: install.metallb
-#   vars:
-#     metallb__ip_end: '{{ k3s_server__ip_end }}'
-#     metallb__ip_start: '{{ k3s_server__ip_start }}'
-
-# - name: Install traefik2 ingress controller
-#   delegate_to: toolbox
-#   ansible.builtin.shell: |
-#     set -e
-#     arkade install traefik2 \
-#       --dashboard
-#     mkdir -p /etc/ansible-locks && \
-#     touch /etc/ansible-locks/traefik2
-#   args:
-#     creates: "/etc/ansible-locks/traefik2"
+- name: Bootstrap sealed-secrets
+  include_role:
+    name: sealed_secrets
+  vars:
+    sealed_secrets__kubeconfig: '{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}'
 
 - name: Bootstrap argocd
   include_role:

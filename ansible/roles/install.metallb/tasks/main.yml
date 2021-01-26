@@ -39,7 +39,7 @@
       kind: Secret
       metadata:
         name: memberlist
-        namespace: metallb-system
+        namespace: metallb-system`
       data:
         secretkey: "{{ lookup( 'password', '/dev/null length=128' ) | b64encode }}"
     state: present

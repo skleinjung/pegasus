@@ -1,4 +1,4 @@
-# k3s.install
+# argocd
 Bootstraps ArgoCD in a Kubernetes cluster. If `argocd__root_application_url` is not specified, then ArgoCD will be configured but no root application will be deployed.
 
 # Variables
@@ -20,9 +20,3 @@ argocd__helm_repositories:
       url: https://storage.googleapis.com/istio-prerelease/daily-build/master-latest-daily/charts
       name: istio.io
 ```
-
-# k3s_server__ip_start: first IP address in the range assigned to this cluster [Required]
-# k3s_server__ip_start: e.g., 10.0.1.100
-
-# k3s_server__ip_end: last IP address in the range assigned to this cluster [Required]
-# k3s_server__ip_end: e.g., 10.0.1.199

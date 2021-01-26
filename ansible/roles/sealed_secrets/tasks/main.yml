@@ -1,0 +1,34 @@
+---
+- name: Deploy pre-generated master key
+  become: false
+  delegate_to: toolbox
+  community.kubernetes.k8s:
+    state: present
+    definition: "{{ sealed_secrets__master_key | to_nice_yaml }}"
+    validate:
+      fail_on_error: yes
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ sealed_secrets__kubeconfig }}'
+  when: sealed_secrets__master_key
+
+- name: Get existing sealed-secrets Deployment
+  become: false
+  delegate_to: toolbox
+  community.kubernetes.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: sealed-secrets
+    namespace: kube-system
+  register: sealed_secrets
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ sealed_secrets__kubeconfig }}'
+
+- name: Install sealed-secrets
+  become: false
+  delegate_to: toolbox
+  ansible.builtin.shell: |
+    set -e
+    arkade install sealed-secrets \
+      --namespace kube-system \
+      --kubeconfig "{{ sealed_secrets__kubeconfig }}"
+  when: (sealed_secrets.resources | count) == 0
