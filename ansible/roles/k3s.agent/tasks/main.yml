@@ -1,0 +1,15 @@
+---
+- name: Enumerate services on host
+  ansible.builtin.service_facts: {}
+
+- name: Install k3s cluster
+  delegate_to: toolbox
+  ansible.builtin.shell: |
+    set -e
+    k3sup join \
+      --host "{{ inventory_hostname }}" \
+      --server-host "{{ k3s__server_host }}" \
+      --user ansible \
+      --ssh-key "{{ k3s__ansible_ssh_key }}"
+  when: ('k3s.service' is not in ansible_facts.services) or (ansible_facts.services['k3s.service'].state != 'running')
+

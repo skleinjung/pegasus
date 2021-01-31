@@ -1,0 +1,2 @@
+# k3s__ansible_ssh_key: path to the SSH key to use when authenticating to k3s nodes (Default: /home/ansible/.ssh/id_ed25519)
+k3s__ansible_ssh_key: /home/ansible/.ssh/id_ed25519

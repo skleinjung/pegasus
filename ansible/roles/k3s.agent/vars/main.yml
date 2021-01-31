@@ -1,0 +1,2 @@
+# k3s__server_host: host name of the k3s server node (Required)
+# k3s__server_host: e.g., my-server

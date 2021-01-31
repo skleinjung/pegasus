@@ -1,0 +1,46 @@
+## template: jinja
+#cloud-config
+chpasswd:
+  expire: False
+mounts:
+  - [ swap ]
+package_update: false
+package_upgrade: false
+packages:
+  - qemu-guest-agent
+runcmd:
+  - dhclient -r
+  - dhclient
+user: sean
+users:
+  - name: sean
+    groups: sudo
+    lock_passwd: false
+    plain_text_passwd: admin
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCggcZXYQcFadvoQbrz9FfAeYVfdgP1w/05duWpN9Cp3GNnhndKCPO0c6WyTiNN90eaTZTHnIVEXr0Jc6ebTKuv+yNTfOapw7v0gQfg24w7js4/Eruye0E/+ZSCltNv4UGqyzFin5HgApKLSItHRmXwZxvK12nWi2k6pd4VHnNW4kpFEgA6hibH1Sw2ZX4OZLXBUmLuhbjdxUuQYe4KUcizlOAWG520tF1sVB6FgOMN9O1u3++kd7cxum4/dIx+NGi5ZkEWWT5h5Nj2WdCTg6+sEt2T1MfB8W4CliAgAonK8mAZN7lBpllS0mUMOuSFFVQPpk9LufVpfVuAYbHRkP6p Sean@Archon
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+  - name: ansible
+    groups: sudo
+    lock_passwd: false
+    plain_text_passwd: admin
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILsKUHKBW4kRQ0HIyMkaLOKETBkhcfstHHTKU39n3KM2 Pegasus Ansible
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+write_files:
+  - path: /etc/ssh/sshd_config
+    content: |
+      Include /etc/ssh/sshd_config.d/*.conf
+      PermitRootLogin no
+      PermitEmptyPasswords no
+      ChallengeResponseAuthentication no
+      UsePAM yes
+      X11Forwarding yes
+      PrintMotd no
+      AcceptEnv LANG LC_*
+      Subsystem sftp    /usr/lib/openssh/sftp-server
+      PasswordAuthentication no
+      AllowUsers ansible sean
+
