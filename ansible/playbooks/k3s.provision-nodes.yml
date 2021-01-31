@@ -6,7 +6,9 @@
   - name: Set empty node lists
     ansible.builtin.set_fact:
       servers: '{{ [] }}'
+      server_count: 0
       agents: '{{ [] }}'
+      agent_count: 0
 
 - name: Construct server list for {{ environment_key }}
   gather_facts: no
@@ -17,6 +19,7 @@
     delegate_to: toolbox
     ansible.builtin.set_fact:
       servers: '{{ ansible_play_hosts_all }}'
+      server_count: '{{ ansible_play_hosts_all | length }}'
 
 - name: Construct agent list for {{ environment_key }}
   gather_facts: no
@@ -27,6 +30,7 @@
     delegate_to: toolbox
     ansible.builtin.set_fact:
       agents: '{{ ansible_play_hosts_all }}'
+      agent_count: '{{ ansible_play_hosts_all | length }}'
 
 - name: Calculate new missing agent count
   gather_facts: no
@@ -35,10 +39,11 @@
   - name: Get current cluster size
     ansible.builtin.set_fact:
       current_cluster_size: '{{ (hostvars["toolbox"]["agents"] | length) + (hostvars["toolbox"]["servers"] | length) }}'
+      desired_cluster_size: '{{ cluster_size }}'
   - name: Get difference with desired cluster size
     ansible.builtin.set_fact:
       agents_to_create: '{{ [0, cluster_size|int - ((hostvars["toolbox"]["current_cluster_size"]|int))] | max }}'
-      agents_to_destroy: '{{ [0, cluster_size|int - ((hostvars["toolbox"]["current_cluster_size"]|int))] | min | abs }}'
+      agents_to_destroy: '{{ [0, cluster_size|int - (hostvars["toolbox"]["current_cluster_size"]|int - hostvars["toolbox"]["server_count"]|int)] | min | abs }}'
   - debug:
       msg: 'Current cluster size: {{ hostvars["toolbox"]["current_cluster_size"] }} (a=({{ hostvars["toolbox"]["agents"] | length }}), s=({{ hostvars["toolbox"]["servers"] | length }}))'
       verbosity: 3
@@ -81,58 +86,73 @@
       k3s__node_type: agent
     loop: '{{ query("sequence", "count=" + (hostvars["toolbox"]["agents_to_create"] | string)) }}'
 
-- name: Destroy {{ hostvars["toolbox"]["agents_to_destroy"] }} agents for environment {{ environment_key }}
+# this is crude, and should probably be extracted to a role similar to create
+- name: Destroy unneeded nodes for environment {{ environment_key }}
   gather_facts: no
   hosts: toolbox
   post_tasks:
   - name: Update dynamic inventory
     meta: refresh_inventory
   tasks:
-  - name: Destroy agent VM
-    debug:
-      msg: 'not implemented'
-    loop: '{{ query("sequence", "count=" + (hostvars["toolbox"]["agents_to_destroy"] | string)) }}'
-
-# todo: destroy server
-
-# TODO: teardown tasks are very crude for now
-# - name: Destroy cluster for environment {{ environment_key }}
-#   gather_facts: no
-#   hosts: k3s_nodes,&{{ environment_key }}
-#   post_tasks:
-#   - name: Update dynamic inventory
-#     meta: refresh_inventory
-#   tasks:
-#   - name: Destroy node {{ inventory_hostname }}
-#     block:
-#     - name: Stop VM {{ inventory_hostname }}
-#       delegate_to: toolbox
-#       community.general.proxmox_kvm:
-#         api_user: '{{ proxmox__api_user }}'
-#         api_password: '{{ proxmox__api_password }}'
-#         api_host: '{{ proxmox__api_host }}'
-#         force: yes
-#         name: '{{ inventory_hostname }}'
-#         node: typhon
-#         proxmox_default_behavior: no_defaults
-#         state: stopped
-#         timeout: 300
-#     # VM removal fails silently if it is not shut down, so we wait for VM to settle after stopping first
-#     - name: Wait for VM to shutdown
-#       delegate_to: localhost
-#       wait_for:
-#         timeout: 15
-#     - name: Remove VM {{ inventory_hostname }}
-#       delegate_to: toolbox
-#       community.general.proxmox_kvm:
-#         api_user: '{{ proxmox__api_user }}'
-#         api_password: '{{ proxmox__api_password }}'
-#         api_host: '{{ proxmox__api_host }}'
-#         name: '{{ inventory_hostname }}'
-#         node: typhon
-#         proxmox_default_behavior: no_defaults
-#         state: absent
-#     when: mode == 'destroy'
-#   vars:
-#         # set to "destroy" to run this play (and destroy a cluster)
-#     mode: update
+  - name: Destroy agent node
+    block:
+    - name: Stop VM 
+      community.general.proxmox_kvm:
+        api_user: '{{ proxmox__api_user }}'
+        api_password: '{{ proxmox__api_password }}'
+        api_host: '{{ proxmox__api_host }}'
+        force: yes
+        name: "{{ hostvars['toolbox']['agents'][item|int - 1] }}"
+        node: typhon
+        proxmox_default_behavior: no_defaults
+        state: stopped
+        timeout: 300
+      loop: '{{ query("sequence", "count=" + (hostvars["toolbox"]["agents_to_destroy"] | string)) }}'
+    # VM removal fails silently if it is not shut down, so we wait for VM to settle after stopping first
+    - name: Wait for VMs to shutdown
+      delegate_to: localhost
+      wait_for:
+        timeout: 15
+    - name: Remove VM
+      community.general.proxmox_kvm:
+        api_user: '{{ proxmox__api_user }}'
+        api_password: '{{ proxmox__api_password }}'
+        api_host: '{{ proxmox__api_host }}'
+        name: "{{ hostvars['toolbox']['agents'][item|int - 1] }}"
+        node: typhon
+        proxmox_default_behavior: no_defaults
+        state: absent
+      loop: '{{ query("sequence", "count=" + (hostvars["toolbox"]["agents_to_destroy"] | string)) }}'
+    when: hostvars["toolbox"]["agents_to_destroy"] | int > 0
+  - name: Destroy server nodes
+    block:
+    - name: Stop VM 
+      delegate_to: toolbox
+      community.general.proxmox_kvm:
+        api_user: '{{ proxmox__api_user }}'
+        api_password: '{{ proxmox__api_password }}'
+        api_host: '{{ proxmox__api_host }}'
+        force: yes
+        name: "{{ hostvars['toolbox']['servers'][item|int - 1] }}"
+        node: typhon
+        proxmox_default_behavior: no_defaults
+        state: stopped
+        timeout: 300
+      loop: '{{ hostvars["toolbox"]["servers"] }}'
+    # VM removal fails silently if it is not shut down, so we wait for VM to settle after stopping first
+    - name: Wait for VMs to shutdown
+      delegate_to: localhost
+      wait_for:
+        timeout: 15
+    - name: Remove VM
+      delegate_to: toolbox
+      community.general.proxmox_kvm:
+        api_user: '{{ proxmox__api_user }}'
+        api_password: '{{ proxmox__api_password }}'
+        api_host: '{{ proxmox__api_host }}'
+        name: "{{ hostvars['toolbox']['servers'][item|int - 1] }}"
+        node: typhon
+        proxmox_default_behavior: no_defaults
+        state: absent
+      loop: '{{ hostvars["toolbox"]["servers"] }}'
+    when: hostvars["toolbox"]["desired_cluster_size"]|int < 1
