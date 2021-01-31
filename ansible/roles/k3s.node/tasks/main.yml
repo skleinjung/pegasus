@@ -1,0 +1,24 @@
+# Config Options
+#   - memory_min: default 2048
+#   - memory_max: default 4096
+#   - vm_template: default "ubuntu-server-16gb-20210117"
+#   - TODO: user-data config, etc.
+---
+- name: Load {{ k3s__node_type }} configuration for {{ k3s__environment }}
+  ansible.builtin.include_vars: 
+    dir: config
+    extensions:
+      - yaml
+      - yml
+    files_matching: '{{ k3s__config_key | default(k3s__environment) }}'
+    name: config
+- name: Create new cloned VM
+  include_role:
+    name: vm.clone
+  vars:
+    proxmox__balloon: '{{ config.memory_min | default(k3s__vm_memory_min_default) }}'
+    proxmox__memory: '{{ config.memory_max | default(k3s__vm_memory_max_default) }}'
+    vm__clone_basename: k3s-{{ k3s__node_type }}-{{ k3s__environment }}
+    vm__clone_type: k3s-{{ k3s__node_type }}
+    vm__inventory_group: new_vms
+    vm__template: '{{ config.vm_template | default(k3s__vm_template_default) }}'

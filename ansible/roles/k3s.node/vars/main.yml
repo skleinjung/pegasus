@@ -1,0 +1,2 @@
+# k3s__environment: environment key for the node to create (i.e. 'dev', 'prod', etc) (Required)
+# k3s__environment: e.g., dev

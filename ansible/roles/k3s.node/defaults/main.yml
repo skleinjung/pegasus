@@ -1,0 +1,13 @@
+# k3s__ansible_ssh_key: path to the SSH key to use when authenticating to k3s nodes (Default: /home/ansible/.ssh/id_ed25519)
+k3s__ansible_ssh_key: /home/ansible/.ssh/id_ed25519
+
+# k3s__config_key: key for the configuration to use (under config/k3s) (Default: {{ k3s__environment }})
+# k3s__config_key: 
+
+# k3s__node_type: type of node to create ('agent' or 'server') [Default: server]
+k3s__node_type: server
+
+# default VM parameters, if an environment does not specify overrides
+k3s__vm_memory_max_default: 4096
+k3s__vm_memory_min_default: 2048
+k3s__vm_template_default: ubuntu-server-16gb-20210117
