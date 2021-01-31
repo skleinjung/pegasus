@@ -65,8 +65,11 @@
           --kubeconfig "{{ k3s__kubeconfig_path }}/{{ inventory_hostname }}" \
           --nfs-server "{{ k3s__nfs_server }}" \
           --nfs-path "{{ k3s__nfs_path}}" \
-          --set storageClass.name=nfs
+          --set storageClass.name=nfs \
+          --set storageClass.reclaimPolicy=Retain
   when: k3s__nfs_enabled and ((nfs_client_provisioner.resources | count) == 0)
+
+# todo: change default class to nfs
 
 - name: Bootstrap sealed-secrets
   include_role:
