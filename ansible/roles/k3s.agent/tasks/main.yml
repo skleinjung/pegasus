@@ -2,7 +2,13 @@
 - name: Enumerate services on host
   ansible.builtin.service_facts: {}
 
-- name: Install k3s cluster
+- name: Install NFS client on node
+  apt:
+    name: nfs-common
+    state: latest
+    install_recommends: no
+
+- name: Install k3s
   delegate_to: toolbox
   ansible.builtin.shell: |
     set -e

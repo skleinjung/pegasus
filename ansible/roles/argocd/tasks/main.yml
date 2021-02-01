@@ -58,15 +58,3 @@
   environment:
     K8S_AUTH_KUBECONFIG: '{{ argocd__kubeconfig }}'
   when: argocd__helm_repositories
-
-- name: Deploy root application
-  become: false
-  delegate_to: toolbox
-  community.kubernetes.k8s:
-    state: present
-    definition: "{{ lookup('template', 'root-application.yml') | from_yaml }}"
-    validate:
-      fail_on_error: yes
-  environment:
-    K8S_AUTH_KUBECONFIG: '{{ argocd__kubeconfig }}'
-  when: argocd__root_application_url

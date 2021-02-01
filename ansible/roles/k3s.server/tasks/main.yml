@@ -2,7 +2,7 @@
 - name: Enumerate services on host
   ansible.builtin.service_facts: {}
 
-- name: Install k3s cluster
+- name: Install k3s
   delegate_to: toolbox
   ansible.builtin.shell: |
     set -e

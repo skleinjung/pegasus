@@ -7,12 +7,3 @@ argocd__helm_repositories: []
 
 # argocd__kubeconfig: path to the kubeconfig file to use for cluster connectivity
 argocd__kubeconfig: ~/.kube/config
-
-# argocd__root_application_name: name of the ArgoCD root application
-argocd__root_application_name: root
-# argocd__root_application_path: path inside the repositoryh of the ArgoCD root application
-argocd__root_application_path: '/'
-# argocd__root_application_revision: git revision of the ArgoCD root application
-argocd__root_application_revision: master
-# argocd__root_application_url: git URL of the ArgoCD root application
-# argocd__root_application_url: null

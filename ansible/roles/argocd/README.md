@@ -1,15 +1,11 @@
 # argocd
-Bootstraps ArgoCD in a Kubernetes cluster. If `argocd__root_application_url` is not specified, then ArgoCD will be configured but no root application will be deployed.
+Bootstraps ArgoCD in a Kubernetes cluster.
 
 # Variables
 
 * **`argocd__admin_password_hash`**: if set, the default ArgoCD password will be changed to the given value; MUST BE A BCRYPT HASH (Default: null)
 * **`argocd__helm_repositories`**: Helm repository configuration, suitable for including in argocd-cm (Default: null)
 * **`argocd__kubeconfig`**: path to the kubeconfig file to use for cluster connectivity (Default: ~/.kube/config)
-* **`argocd__root_application_name`**: name of the ArgoCD root application (Default: root)
-* **`argocd__root_application_path`**: path inside the repositoryh of the ArgoCD root application (Default: /)
-* **`argocd__root_application_revision`**: git revision of the ArgoCD root application (Default: master)
-* **`argocd__root_application_url`**: git URL of the ArgoCD root application (Required)
 
 ## Helm Repository Configuration
 The `argocd__helm_repositories` should be a Yaml string that can be inserted into the argocd-cm ConfigMap. See the [ArgoCD documentation](https://argoproj.github.io/argo-cd/operator-manual/declarative-setup/#helm-chart-repositories) for details. An example configuration would look like:

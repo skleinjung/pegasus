@@ -1,0 +1,11 @@
+---
+- name: Deploy application
+  become: false
+  delegate_to: toolbox
+  community.kubernetes.k8s:
+    state: present
+    definition: "{{ lookup('template', 'application.yml') | from_yaml }}"
+    validate:
+      fail_on_error: yes
+  environment:
+    K8S_AUTH_KUBECONFIG: '{{ argocd__kubeconfig }}'

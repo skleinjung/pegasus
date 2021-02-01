@@ -1,0 +1,11 @@
+# argocd__kubeconfig: path to the kubeconfig file to use for cluster connectivity
+argocd__kubeconfig: ~/.kube/config
+
+# argocd__application_name: name of the ArgoCD application
+# argocd__application_name: e.g., my-application
+# argocd__application_path: path inside the repositoryh of the ArgoCD application
+argocd__application_path: '/'
+# argocd__application_revision: git revision of the ArgoCD application
+argocd__application_revision: master
+# argocd__application_url: git URL of the ArgoCD root application
+# argocd__application_url: e.g., https://github.com/foo/bar.git

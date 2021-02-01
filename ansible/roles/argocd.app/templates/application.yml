@@ -1,21 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: '{{ argocd__root_application_name }}'
+  name: '{{ argocd__application_name }}'
   namespace: argocd
   finalizers:
+    # TODO: enable this to be toggled with variables
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
 
   # Source of the application manifests
   source:
-    repoURL: '{{ argocd__root_application_url }}'
-    targetRevision: '{{ argocd__root_application_revision }}'
-    path: '{{ argocd__root_application_path }}'
-
-    helm:
-      version: v3
+    repoURL: '{{ argocd__application_url }}'
+    targetRevision: '{{ argocd__application_revision }}'
+    path: '{{ argocd__application_path }}'
 
   # Destination cluster and namespace to deploy the application
   destination:
