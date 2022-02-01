@@ -117,3 +117,7 @@ dist
 
 # vscode-react-native temporary files
 .vscode/.react
+
+# ansible dependencies
+ansible_collections
+ansible_roles

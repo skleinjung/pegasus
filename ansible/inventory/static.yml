@@ -1,0 +1,26 @@
+all:
+  children:
+
+    proxmox_controllers:
+      hosts:
+        minerva:
+
+    proxmox_nodes:
+      hosts:
+        typhon:
+          ansible_python_interpreter: /usr/bin/python3
+          ansible_user: sean
+
+    servers:
+      hosts:
+        lockbox:
+        pfsense:
+
+    workstations:
+      hosts:
+        minerva:
+          ansible_user: sean
+
+  vars:
+    ansible_become: yes
+    ansible_user: pegasus

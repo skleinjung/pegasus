@@ -1,0 +1,4 @@
+- hosts: proxmox_controllers
+  roles:
+    - common
+    - proxmox-controller

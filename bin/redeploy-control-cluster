@@ -8,6 +8,8 @@ sh "${DIR}/deploy"
 CONFIG_PATH=/large-pool/config/snippets
 TEMPLATE_ID=103
 VMID=502
+VM_USER=pegasus
+AUTHORIZED_KEYS_FILE=/large-pool/config/snippets/vm_authorized_keys
 
 # update user-data
 # curl -sL https://raw.githubusercontent.com/skleinjung/pegasus/master/configurations/k3s-server/user-data.yaml -o "${CONFIG_PATH}/k3s-server-user-data.yaml"
@@ -19,7 +21,8 @@ read -r -d '' PROXMOX_COMMANDS <<EOF
   qm resize "${VMID}" scsi0 +12G
   qm set "${VMID}" -memory 4096
   qm set "${VMID}" -balloon 2048
-  qm set "${VMID}" --cicustom "user=config:snippets/k3s-control-server-user-data.yaml"
+  qm set "${VMID}" --ciuser "${VM_USER}"
+  qm set "${VMID}" --sshkeys "${AUTHORIZED_KEYS_FILE}"
   qm start "${VMID}"
 EOF
 

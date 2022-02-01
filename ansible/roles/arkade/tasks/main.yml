@@ -1,0 +1,18 @@
+- name: Ensure the arkae checksum is downloaded
+  uri:
+    url: "{{ arkade_checksum_url }}"
+    return_content: true
+  register: arkade_checksum_raw
+
+- name: Ensure sha256sum is set from checksum` variable
+  set_fact:
+    arkade_checksum: "{{ (arkade_checksum_raw.content.split('\n') | select('search', 'arkade') | first).split() | first }}"
+  changed_when: false
+
+- name: download {{ arkade_url }} to {{ arkade_install_path }}
+  become: true
+  get_url:
+    url: '{{ arkade_url }}'
+    dest: '{{ arkade_install_path }}'
+    mode: 0755
+    checksum: 'sha256:{{ arkade_checksum }}'

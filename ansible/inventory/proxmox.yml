@@ -1,0 +1,7 @@
+---
+plugin: community.general.proxmox
+url: https://typhon:8006
+user: root@pam
+password: blue47
+validate_certs: no
+want_facts: yes

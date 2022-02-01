@@ -1,18 +1,17 @@
+## template: jinja
 #cloud-config
-hostname: k3s-server
 chpasswd:
   expire: False
-manage_etc_hosts: true
+hostname: '{{ vm_name }}'
 mounts:
   - [ swap ]
-package_update: true
-package_upgrade: true
+package_update: false
+package_upgrade: false
 packages:
   - qemu-guest-agent
 runcmd:
-  - mkdir -p /home/pegasus/bootstrap
-  - curl -sL https://raw.githubusercontent.com/skleinjung/pegasus/master/configurations/k3s-server/setup.sh -o /home/pegasus/bootstrap/setup.sh
-  - sh /home/pegasus/bootstrap/setup.sh
+  - dhclient -r
+  - dhclient
 user: pegasus
 users:
   - name: pegasus
@@ -32,7 +31,7 @@ write_files:
       X11Forwarding yes
       PrintMotd no
       AcceptEnv LANG LC_*
-      Subsystem sftp	/usr/lib/openssh/sftp-server
+      Subsystem sftp    /usr/lib/openssh/sftp-server
       PasswordAuthentication no
       AllowUsers pegasus
-  
+

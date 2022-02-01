@@ -1,5 +1,5 @@
 #cloud-config
-hostname: k3s-control-server
+hostname: hostname-not-set
 chpasswd:
   expire: False
 manage_etc_hosts: true
@@ -9,11 +9,6 @@ package_update: true
 package_upgrade: true
 packages:
   - qemu-guest-agent
-runcmd:
-  - mkdir -p /home/pegasus/bootstrap
-  - curl -sL https://raw.githubusercontent.com/skleinjung/pegasus/master/configurations/k3s-server/setup.sh -o /home/pegasus/bootstrap/setup.sh
-  - sh /home/pegasus/bootstrap/setup.sh
-  - systemctl restart network.service
 user: pegasus
 users:
   - name: pegasus

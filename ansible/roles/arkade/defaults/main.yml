@@ -1,0 +1,4 @@
+arkade_arch: amd64
+arkade_mirror: https://github.com/alexellis/arkade/releases/download
+arkade_os: linux
+arkade_version: 0.6.36
